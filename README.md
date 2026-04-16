@@ -5,10 +5,29 @@ Laravel 13 skeleton for the MVP of a game items e-commerce focused on Dota 2 and
 ## Foundation assumptions
 
 - Application stack: Laravel 13, PHP 8.3, PostgreSQL, Docker
-- Architecture direction: modular monolith by domain with Actions, implemented in later tasks
-- Current scope: repository foundation only
+- Architecture direction: modular monolith by domain
+- Business use cases live in Actions
 - Default application language: English
-- `pt_BR` should remain available for future localization work
+- `pt_BR` remains ready for future localization work
+
+## Architecture guardrails
+
+- Domain code lives under `app/Modules`
+- Namespace pattern: `App\Modules\{Module}\{Layer}\ClassName`
+- Controllers and Livewire components stay thin
+- Actions are the primary use-case boundary
+- DTOs are the default input boundary for non-trivial writes
+- Query Objects are the default home for complex reads
+- Generic folders such as `Services`, `Helpers`, `Common`, and `Shared` must not be introduced
+- Prefer Laravel defaults before custom infrastructure
+
+## Current module skeleton
+
+- `Catalog`: `Actions`, `DTOs`, `Models`, `Policies`, `Queries`
+- `Cart`: `Actions`, `DTOs`, `Models`
+- `Orders`: `Actions`, `DTOs`, `Events`, `Models`, `Queries`
+- `Payments`: `Actions`, `DTOs`, `Gateways`
+- `Admin`: `Actions`, `Policies`, `Queries`
 
 ## Local bootstrap
 
@@ -44,18 +63,23 @@ DB_SSLMODE=prefer
 
 Adjust these values in `.env` to match your local Docker or PostgreSQL setup before running database-dependent commands.
 
-## Minimal verification
+## Localization baseline
 
-Run only the baseline checks required for repository foundation work from the running app container:
+- Default locale remains `en`
+- `pt_BR` is present as the secondary baseline locale
+- Shared backend messages should come from `lang/en` and `lang/pt_BR`
+- Do not hardcode user-facing strings when localization is expected
+
+## Testing and validation baseline
+
+- Every significant feature should cover at least one happy path
+- Every significant feature should cover at least one failure or business-rule path
+- Prefer behavior-focused tests over implementation-detail assertions
+- Keep Wave 0 validation limited to the smallest relevant checks
+
+Run the baseline checks from the running app container:
 
 ```bash
-docker exec ecommerce-app-1 php artisan about
 docker exec ecommerce-app-1 php artisan test
 docker exec ecommerce-app-1 vendor/bin/pint --test
 ```
-
-## Notes for the next tasks
-
-- Do not introduce domain modules during foundation work
-- Do not add business migrations in this phase
-- Keep changes close to Laravel defaults unless a task explicitly requires otherwise
