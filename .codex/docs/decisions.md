@@ -279,7 +279,7 @@ Examples:
 - handle request validation
 - return HTTP responses
 - replace Actions as the main use-case boundary
-- become a dumping ground for ìlogic extracted from controllersî
+- become a dumping ground for ‚Äúlogic extracted from controllers‚Äù
 
 ### Guiding Principle
 
@@ -427,6 +427,9 @@ Rules:
 
 - Default language: English
 - Support: `pt_BR`
+- Translation files under `lang/en/*` must contain English user-facing strings
+- Translation files under `lang/pt_BR/*` must contain Portuguese user-facing strings
+- Duplicating English strings inside `pt_BR` is not acceptable, except for unavoidable technical identifiers or product names
 - Do not hardcode user-facing text when localization is expected
 - Validation and API messages should follow a predictable localization path
 
@@ -563,4 +566,5 @@ Use them only when they improve clarity, consistency, or reuse.
 - Repositories are selective
 - DomainServices are limited to reusable domain logic
 - API responses must stay consistent
+- `lang/en` stays in English and `lang/pt_BR` stays in Portuguese
 - Tests must prove business behavior

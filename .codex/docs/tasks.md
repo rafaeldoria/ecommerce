@@ -49,7 +49,7 @@ If any conflict appears:
 - Use English as the default language and keep `pt_BR` ready.
 - Add or update tests for every delivered capability.
 - Run only the validations relevant to the task block before marking it complete.
-- Do not partially implement deferred features just to ìprepareî them.
+- Do not partially implement deferred features just to "prepare" them.
 
 ---
 
@@ -131,8 +131,8 @@ Prepare async and payment boundaries without implementing full gateway flows.
 | ID | Task | Depends On | Status |
 | --- | --- | --- | --- |
 | T00 | Repository foundation audit | none | done |
-| T01 | Modular architecture skeleton | T00 | |
-| T02 | Shared conventions and quality guardrails | T00 | |
+| T01 | Modular architecture skeleton | T00 | done |
+| T02 | Shared conventions and quality guardrails | T00 | done |
 
 ### Wave 1
 
@@ -779,7 +779,7 @@ A task is done only when:
 - relevant tests pass
 - style checks pass for touched code
 - deferred items remain deferred and documented
-- no architectural rule was broken to ìsave timeî
+- no architectural rule was broken to √¢‚Ç¨≈ìsave time√¢‚Ç¨¬ù
 
 ---
 
