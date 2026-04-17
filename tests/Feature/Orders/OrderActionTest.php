@@ -6,6 +6,7 @@ use App\Modules\Cart\Actions\AddToCartAction;
 use App\Modules\Cart\Actions\GetCurrentCartAction;
 use App\Modules\Cart\DTOs\AddToCartData;
 use App\Modules\Cart\Exceptions\EmptyCart;
+use App\Modules\Cart\Exceptions\InvalidCartQuantity;
 use App\Modules\Catalog\Models\Product;
 use App\Modules\Orders\Actions\CreateOrderAction;
 use App\Modules\Orders\DTOs\CreateOrderData;
@@ -91,6 +92,38 @@ class OrderActionTest extends TestCase
             email: 'invalid-email',
             whatsapp: '123',
         ));
+    }
+
+    #[Test]
+    public function create_order_action_rejects_corrupted_cart_quantities(): void
+    {
+        $product = Product::factory()->create([
+            'price' => 159900,
+            'quantity' => 5,
+        ]);
+
+        $this->app['session']->put('cart.items', [
+            (string) $product->getKey() => [
+                'product_id' => $product->getKey(),
+                'quantity' => 0,
+                'unit_price' => $product->price,
+                'product_name' => $product->name,
+            ],
+        ]);
+
+        $this->expectException(InvalidCartQuantity::class);
+
+        try {
+            app(CreateOrderAction::class)->execute(new CreateOrderData(
+                email: 'buyer@example.com',
+                whatsapp: '+55 11 99999-1111',
+            ));
+        } finally {
+            $this->assertDatabaseCount('orders', 0);
+            $this->assertDatabaseCount('order_items', 0);
+            $this->assertSame(5, $product->fresh()->quantity);
+            $this->assertCount(1, app(GetCurrentCartAction::class)->execute());
+        }
     }
 
     #[Test]
