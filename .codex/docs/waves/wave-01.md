@@ -2,13 +2,13 @@
 
 ## Wave Goal
 
-This wave created the core foundation for the MVP domains:
+This wave delivers the first complete backend backbone for the MVP purchase flow:
 
-- `Catalog`: defines and organizes the products
-- `Cart`: stores the current shopper cart in session
-- `Orders`: converts the cart into an order
+- `Catalog` defines what can be sold
+- `Cart` stores the current shopper cart in session
+- `Orders` turns the current cart into a persisted order
 
-The goal was to prepare the core purchase flow without introducing the HTTP layer, UI, real payment processing, or richer operational notifications yet.
+The focus stays on the core domain flow only. This wave does not introduce controllers, routes, checkout UI, payment processing, or automated fulfillment.
 
 ## Short Flow
 
@@ -24,7 +24,7 @@ flowchart TD
     B --> B4[Product Model]
 
     C --> C1[AddToCartData / UpdateCartItemData]
-    C --> C2[CartStore interface]
+    C --> C2[CartStore contract]
     C2 --> C3[SessionCartStore]
     C --> B4
 
@@ -50,19 +50,19 @@ flowchart TD
 
 - `AddToCartAction`, `UpdateCartItemAction`, `RemoveFromCartAction`, `GetCurrentCartAction`, and `ClearCartAction`
 - use `CartStore` as the contract
-- the current implementation is `SessionCartStore`
-- `Cart` queries `Catalog\Product` to ensure the product exists and was not soft deleted
+- currently resolve to `SessionCartStore`
+- verify the selected product still exists and is not soft deleted
+- keep cart lines normalized by `product_id`
 
 ### Orders
 
 - `CreateOrderAction` receives `CreateOrderData`
-- calls `GetCurrentCartAction` to read the current cart
-- queries `Catalog\Product` again to revalidate existence and stock
-- opens a transaction
-- creates `Order`
-- creates `OrderItem`
-- decrements stock in `Product`
-- clears the cart with `ClearCartAction`
+- reads the current cart through `GetCurrentCartAction`
+- validates the cart is not empty and rejects corrupted item quantities before persistence
+- revalidates products and stock directly from `Catalog\Product`
+- opens a transaction to create `Order` and `OrderItem`
+- decrements stock from the confirmed product rows
+- clears the cart after a successful persistence flow
 - dispatches `OrderCreated`
 
 ## Central Idea Of Each Module
@@ -75,19 +75,20 @@ be the source of truth for the MVP catalog.
 What it does:
 
 - models `Game`, `Rarity`, and `Product`
-- ensures every product belongs to one game and one rarity
-- ensures `price` and `quantity` enter the system in a valid state through Actions
+- keeps product classification limited to `game` and `rarity`
+- stores `price` as integer cents
+- validates product write input through Actions
 
-What it is expected to do:
+What it is expected to do now:
 
 - create and update products safely
-- preserve the MVP classification model as only `game` + `rarity`
-- serve as the base for Cart and Orders
+- preserve the MVP classification model without adding `category`
+- serve as the shared product source for Cart and Orders
 
 ### Cart
 
 Central idea:
-keep the current cart state simple and safe.
+keep the current cart state simple, session-based, and application-safe.
 
 What it does:
 
@@ -97,34 +98,34 @@ What it does:
 - returns the current cart
 - clears the cart
 
-What it is expected to do:
+What it is expected to do now:
 
-- store only the minimum data needed for checkout
-- never trust price coming from outside
-- merge repeated items instead of duplicating lines
-- work without leaking request concerns into Actions
-- stay simple while the MVP uses session storage
+- store only the minimum data needed for the current checkout handoff
+- avoid trusting externally supplied price data
+- merge repeated adds for the same product instead of duplicating lines
+- stay independent from HTTP concerns
 
 ### Orders
 
 Central idea:
-turn a valid cart into a persisted order.
+turn a valid cart plus minimal contact data into a persisted order.
 
 What it does:
 
-- validates the minimum buyer contact input: `email` and `whatsapp`
-- validates that the cart is not empty
-- revalidates products and stock in the database
-- creates the order and order items inside a transaction
-- reduces stock
-- dispatches an order-created event
+- validates `email` and `whatsapp`
+- rejects empty carts
+- rejects corrupted cart quantities before creating records
+- rechecks product existence and stock inside a transaction
+- creates the order and its items
+- decrements stock
+- dispatches `OrderCreated`
 
-What it is expected to do:
+What it is expected to do now:
 
-- guarantee consistency in the purchase flow
-- prevent orders with invalid stock state
-- stay compatible with manual fulfillment
-- leave a clear extension point for future notifications and automation
+- keep the purchase flow consistent for manual fulfillment
+- make the initial order status explicit
+- prevent invalid stock state from being persisted
+- leave a clean extension point for future notifications and async work
 
 ## What This Wave Does Not Cover Yet
 
@@ -133,17 +134,17 @@ This wave still does not include:
 - controllers or routes
 - Form Requests
 - Policies or Gates
-- payment processing
+- payment capture or gateway integration
 - automated delivery
-- full operational notification flow
+- internal notification orchestration beyond `OrderCreated`
 - cart or checkout UI
 
 ## Practical Reading Of The Design
 
 If you want the shortest interpretation:
 
-1. `Catalog` defines what can be sold.
-2. `Cart` stores what the user wants to buy right now.
-3. `Orders` closes the purchase using the current cart and the real stock state.
+1. `Catalog` defines what exists and what can be sold.
+2. `Cart` stores what the shopper wants right now.
+3. `Orders` turns that cart into a real order using the current stock state.
 
 That is the core of Wave 01.

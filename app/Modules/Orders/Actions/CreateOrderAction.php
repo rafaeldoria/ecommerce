@@ -5,6 +5,8 @@ namespace App\Modules\Orders\Actions;
 use App\Modules\Cart\Actions\ClearCartAction;
 use App\Modules\Cart\Actions\GetCurrentCartAction;
 use App\Modules\Cart\Exceptions\EmptyCart;
+use App\Modules\Cart\Exceptions\InvalidCartQuantity;
+use App\Modules\Cart\Exceptions\InvalidProductReference;
 use App\Modules\Catalog\Models\Product;
 use App\Modules\Orders\DTOs\CreateOrderData;
 use App\Modules\Orders\Events\OrderCreated;
@@ -29,6 +31,8 @@ class CreateOrderAction
         if ($cartItems === []) {
             throw new EmptyCart('Cart is empty.');
         }
+
+        $this->guardCartItems($cartItems);
 
         $order = DB::transaction(function () use ($cartItems, $data): Order {
             $productIds = array_map(
@@ -82,6 +86,22 @@ class CreateOrderAction
         event(new OrderCreated($order));
 
         return $order;
+    }
+
+    private function guardCartItems(array $cartItems): void
+    {
+        foreach ($cartItems as $cartItem) {
+            $productId = $cartItem['product_id'] ?? null;
+            $quantity = $cartItem['quantity'] ?? null;
+
+            if (!is_int($productId) || $productId <= 0) {
+                throw new InvalidProductReference('Cart contains an invalid product reference.');
+            }
+
+            if (!is_int($quantity) || $quantity <= 0) {
+                throw new InvalidCartQuantity('Cart quantity must be greater than zero.');
+            }
+        }
     }
 
     private function guardContact(CreateOrderData $data): void
