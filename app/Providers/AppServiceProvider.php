@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Modules\Cart\Contracts\CartStore;
+use App\Modules\Cart\Stores\SessionCartStore;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -11,7 +13,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(CartStore::class, SessionCartStore::class);
     }
 
     /**
