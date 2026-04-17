@@ -37,6 +37,8 @@ If any conflict appears:
 ## Execution Rules
 
 - Keep scope limited to the current task block.
+- When Docker containers are running, execute Laravel and PHP project commands through the app container instead of the raw host shell.
+- Treat `ecommerce-app-1` as the default command target for `php artisan`, PHPUnit, and Pint commands unless the environment changes.
 - Prefer Laravel defaults before creating custom abstractions.
 - Do not create a generic `Services` directory.
 - Keep controllers and Livewire components thin.
@@ -89,16 +91,18 @@ Use these rules to reduce overlap when work happens asynchronously:
 
 Adjust only if the repository tooling changes.
 
-- `php artisan test`
-- `php artisan test --filter=...`
-- `php artisan migrate --pretend`
-- `php artisan route:list`
-- `php artisan config:clear`
-- `vendor/bin/pint --test`
+Run the standard validations through the app container when it is available:
+
+- `docker exec ecommerce-app-1 php artisan test`
+- `docker exec ecommerce-app-1 php artisan test --filter=...`
+- `docker exec ecommerce-app-1 php artisan migrate --pretend`
+- `docker exec ecommerce-app-1 php artisan route:list`
+- `docker exec ecommerce-app-1 php artisan config:clear`
+- `docker exec ecommerce-app-1 vendor/bin/pint --test`
 
 If Pint is not used:
 
-- `vendor/bin/phpcs`
+- `docker exec ecommerce-app-1 vendor/bin/phpcs`
 
 ---
 
@@ -199,9 +203,9 @@ Confirm the Laravel repository is ready for implementation without changing busi
 
 ### Validation
 
-- `php artisan test`
-- `php artisan about`
-- `vendor/bin/pint --test`
+- `docker exec ecommerce-app-1 php artisan test`
+- `docker exec ecommerce-app-1 php artisan about`
+- `docker exec ecommerce-app-1 vendor/bin/pint --test`
 
 ---
 
@@ -252,8 +256,8 @@ Create the minimum project structure that enforces the approved modular-by-domai
 
 ### Validation
 
-- `php artisan test`
-- `vendor/bin/pint --test`
+- `docker exec ecommerce-app-1 php artisan test`
+- `docker exec ecommerce-app-1 vendor/bin/pint --test`
 
 ---
 
@@ -290,7 +294,7 @@ Lock in coding and delivery conventions needed before feature work scales.
 ### Validation
 
 - documentation review
-- `vendor/bin/pint --test`
+- `docker exec ecommerce-app-1 vendor/bin/pint --test`
 
 ---
 
@@ -342,9 +346,9 @@ Implement the Catalog module foundation for games, rarities, and products.
 
 ### Validation
 
-- `php artisan migrate --pretend`
-- `php artisan test --filter=Catalog`
-- `vendor/bin/pint --test`
+- `docker exec ecommerce-app-1 php artisan migrate --pretend`
+- `docker exec ecommerce-app-1 php artisan test --filter=Catalog`
+- `docker exec ecommerce-app-1 vendor/bin/pint --test`
 
 ---
 
@@ -365,6 +369,7 @@ Implement the cart backend needed by the MVP and make the persistence decision e
 - cart persistence strategy selected and documented:
   - session-based
   - database-backed
+- Wave 1 default decision: use session-based cart persistence unless this file is explicitly updated
 - cart item structure defined
 - Actions:
   - `AddToCartAction`
@@ -389,8 +394,8 @@ Implement the cart backend needed by the MVP and make the persistence decision e
 
 ### Validation
 
-- `php artisan test --filter=Cart`
-- `vendor/bin/pint --test`
+- `docker exec ecommerce-app-1 php artisan test --filter=Cart`
+- `docker exec ecommerce-app-1 vendor/bin/pint --test`
 
 ---
 
@@ -436,9 +441,9 @@ Allow the MVP to create an order from cart data and customer contact input.
 
 ### Validation
 
-- `php artisan migrate --pretend`
-- `php artisan test --filter=Order`
-- `vendor/bin/pint --test`
+- `docker exec ecommerce-app-1 php artisan migrate --pretend`
+- `docker exec ecommerce-app-1 php artisan test --filter=Order`
+- `docker exec ecommerce-app-1 vendor/bin/pint --test`
 
 ---
 
@@ -484,9 +489,9 @@ Expose the approved MVP backend flows through thin HTTP endpoints.
 
 ### Validation
 
-- `php artisan route:list`
-- `php artisan test --filter=Api`
-- `vendor/bin/pint --test`
+- `docker exec ecommerce-app-1 php artisan route:list`
+- `docker exec ecommerce-app-1 php artisan test --filter=Api`
+- `docker exec ecommerce-app-1 vendor/bin/pint --test`
 
 ---
 
@@ -527,8 +532,8 @@ Make newly created orders visible to the internal team so manual fulfillment can
 
 ### Validation
 
-- `php artisan test --filter=Notification`
-- `vendor/bin/pint --test`
+- `docker exec ecommerce-app-1 php artisan test --filter=Notification`
+- `docker exec ecommerce-app-1 vendor/bin/pint --test`
 
 ---
 
@@ -603,8 +608,8 @@ Finish the MVP backend foundation with maintainability and operational clarity.
 
 ### Validation
 
-- `php artisan test`
-- `vendor/bin/pint --test`
+- `docker exec ecommerce-app-1 php artisan test`
+- `docker exec ecommerce-app-1 vendor/bin/pint --test`
 
 ---
 

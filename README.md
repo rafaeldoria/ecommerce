@@ -47,6 +47,31 @@ php artisan key:generate
 
 When the containers are already running, prefer executing Laravel checks through the app container instead of the raw host shell.
 
+Current container names observed in the local stack:
+
+- `ecommerce-app-1`
+- `ecommerce-db-1`
+- `ecommerce-web-1`
+
+## Container-first commands
+
+When the Docker stack is running, prefer these commands through the app container:
+
+```bash
+docker exec ecommerce-app-1 php artisan about
+docker exec ecommerce-app-1 php artisan migrate --pretend
+docker exec ecommerce-app-1 php artisan migrate
+docker exec ecommerce-app-1 php artisan test
+docker exec ecommerce-app-1 php artisan test --filter=Catalog
+docker exec ecommerce-app-1 php artisan test --filter=Cart
+docker exec ecommerce-app-1 php artisan test --filter=Order
+docker exec ecommerce-app-1 php artisan route:list
+docker exec ecommerce-app-1 php artisan config:clear
+docker exec ecommerce-app-1 vendor/bin/pint --test
+```
+
+If a command is Laravel- or PHP-specific and the container is available, treat the app container as the default execution target.
+
 ## Database assumptions
 
 The project baseline targets PostgreSQL. The example environment file is configured with these local defaults:
@@ -80,6 +105,10 @@ Adjust these values in `.env` to match your local Docker or PostgreSQL setup bef
 Run the baseline checks from the running app container:
 
 ```bash
+docker exec ecommerce-app-1 php artisan about
+docker exec ecommerce-app-1 php artisan migrate --pretend
 docker exec ecommerce-app-1 php artisan test
+docker exec ecommerce-app-1 php artisan route:list
+docker exec ecommerce-app-1 php artisan config:clear
 docker exec ecommerce-app-1 vendor/bin/pint --test
 ```
