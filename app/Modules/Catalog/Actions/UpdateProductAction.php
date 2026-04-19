@@ -38,22 +38,22 @@ class UpdateProductAction
     private function guardData(int $price, int $quantity): void
     {
         if ($price < 0) {
-            throw new InvalidProductData('Product price must be zero or greater.');
+            throw new InvalidProductData(__('general.errors.invalid_product_price'));
         }
 
         if ($quantity < 0) {
-            throw new InvalidProductData('Product quantity must be zero or greater.');
+            throw new InvalidProductData(__('general.errors.invalid_product_quantity'));
         }
     }
 
     private function guardReferences(int $gameId, int $rarityId): void
     {
         if (!Game::query()->whereKey($gameId)->exists()) {
-            throw new InvalidProductReference('The selected game does not exist.');
+            throw new InvalidProductReference(__('general.errors.invalid_game_reference'));
         }
 
         if (!Rarity::query()->whereKey($rarityId)->exists()) {
-            throw new InvalidProductReference('The selected rarity does not exist.');
+            throw new InvalidProductReference(__('general.errors.invalid_rarity_reference'));
         }
     }
 }

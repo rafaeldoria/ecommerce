@@ -24,7 +24,7 @@ class AddToCartAction
             ->first();
 
         if ($product === null) {
-            throw new InvalidProductReference('The selected product does not exist.');
+            throw new InvalidProductReference(__('general.errors.invalid_product_reference'));
         }
 
         $items = $this->cartStore->all();
@@ -54,7 +54,7 @@ class AddToCartAction
     private function guardQuantity(int $quantity): void
     {
         if ($quantity <= 0) {
-            throw new InvalidCartQuantity('Cart quantity must be greater than zero.');
+            throw new InvalidCartQuantity(__('general.errors.invalid_cart_quantity'));
         }
     }
 

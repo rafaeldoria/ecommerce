@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'internal_orders' => [
+        'email' => env('INTERNAL_ORDERS_EMAIL', env('MAIL_FROM_ADDRESS', 'hello@example.com')),
+    ],
+
 ];

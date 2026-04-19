@@ -29,7 +29,7 @@ class CreateOrderAction
         $cartItems = $this->getCurrentCartAction->execute();
 
         if ($cartItems === []) {
-            throw new EmptyCart('Cart is empty.');
+            throw new EmptyCart(__('general.errors.empty_cart'));
         }
 
         $this->guardCartItems($cartItems);
@@ -51,11 +51,13 @@ class CreateOrderAction
                 $product = $products->get($cartItem['product_id']);
 
                 if ($product === null) {
-                    throw new InsufficientStock('A cart product is no longer available.');
+                    throw new InsufficientStock(__('general.errors.cart_product_unavailable'));
                 }
 
                 if ($product->quantity < $cartItem['quantity']) {
-                    throw new InsufficientStock("Insufficient stock for product [{$product->getKey()}].");
+                    throw new InsufficientStock(__('general.errors.insufficient_stock', [
+                        'product_id' => $product->getKey(),
+                    ]));
                 }
             }
 
@@ -95,11 +97,11 @@ class CreateOrderAction
             $quantity = $cartItem['quantity'] ?? null;
 
             if (!is_int($productId) || $productId <= 0) {
-                throw new InvalidProductReference('Cart contains an invalid product reference.');
+                throw new InvalidProductReference(__('general.errors.invalid_product_reference'));
             }
 
             if (!is_int($quantity) || $quantity <= 0) {
-                throw new InvalidCartQuantity('Cart quantity must be greater than zero.');
+                throw new InvalidCartQuantity(__('general.errors.invalid_cart_quantity'));
             }
         }
     }
@@ -107,13 +109,13 @@ class CreateOrderAction
     private function guardContact(CreateOrderData $data): void
     {
         if (!filter_var($data->email, FILTER_VALIDATE_EMAIL)) {
-            throw new InvalidOrderContact('Order email must be valid.');
+            throw new InvalidOrderContact(__('general.errors.invalid_order_email'));
         }
 
         $normalizedWhatsapp = preg_replace('/\D+/', '', $data->whatsapp) ?? '';
 
         if ($normalizedWhatsapp === '' || strlen($normalizedWhatsapp) < 10 || strlen($normalizedWhatsapp) > 15) {
-            throw new InvalidOrderContact('WhatsApp number must contain between 10 and 15 digits.');
+            throw new InvalidOrderContact(__('general.errors.invalid_order_whatsapp'));
         }
     }
 }
