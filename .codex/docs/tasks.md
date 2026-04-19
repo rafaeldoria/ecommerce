@@ -140,27 +140,27 @@ Prepare async and payment boundaries without implementing full gateway flows.
 
 ### Wave 1
 
-| ID | Task | Depends On |
-| --- | --- | --- |
-| T10 | Catalog data model and actions | T01, T02 |
-| T11 | Cart persistence strategy and actions | T01, T02, T10 |
-| T12 | Orders domain and order creation flow | T10, T11 |
+| ID | Task | Depends On | Status |
+| --- | --- | --- | --- |
+| T10 | Catalog data model and actions | T01, T02 | done |
+| T11 | Cart persistence strategy and actions | T01, T02, T10 | done |
+| T12 | Orders domain and order creation flow | T10, T11 | done |
 
 ### Wave 2
 
-| ID | Task | Depends On |
-| --- | --- | --- |
-| T20 | API entry layer for MVP flows | T10, T11, T12 |
-| T21 | Internal notification flow for manual fulfillment | T12 |
-| T22 | Localization and message discipline | T20 |
-| T23 | Logging, exceptions, and repository-level verification | T20, T21, T22 |
+| ID | Task | Depends On | Status |
+| --- | --- | --- | --- |
+| T20 | API entry layer for MVP flows | T10, T11, T12 | done |
+| T21 | Internal notification flow for manual fulfillment | T12 | done |
+| T22 | Localization and message discipline | T20 | done |
+| T23 | Logging, exceptions, and repository-level verification | T20, T21, T22 | done |
 
 ### Wave 3
 
-| ID | Task | Depends On |
-| --- | --- | --- |
-| T30 | Payment boundary placeholder | T12 |
-| T31 | Async readiness conventions | T21, T30 |
+| ID | Task | Depends On | Status |
+| --- | --- | --- | --- |
+| T30 | Payment boundary placeholder | T12 | done |
+| T31 | Async readiness conventions | T21, T30 | done |
 
 ---
 
