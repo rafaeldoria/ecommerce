@@ -5,6 +5,38 @@ return [
     'architecture' => 'Modular monolith by domain with Actions as use cases.',
     'validation_baseline' => 'Each significant feature should cover a happy path and a failure or business-rule path.',
     'api' => [
+        'admin' => [
+            'auth' => [
+                'logged_in' => 'Admin authenticated successfully.',
+                'logged_out' => 'Admin logged out successfully.',
+                'profile_retrieved' => 'Admin profile retrieved successfully.',
+            ],
+            'games' => [
+                'listed' => 'Games retrieved successfully.',
+                'created' => 'Game created successfully.',
+                'retrieved' => 'Game retrieved successfully.',
+                'updated' => 'Game updated successfully.',
+                'deleted' => 'Game deleted successfully.',
+            ],
+            'rarities' => [
+                'listed' => 'Rarities retrieved successfully.',
+                'created' => 'Rarity created successfully.',
+                'retrieved' => 'Rarity retrieved successfully.',
+                'updated' => 'Rarity updated successfully.',
+                'deleted' => 'Rarity deleted successfully.',
+            ],
+            'products' => [
+                'listed' => 'Products retrieved successfully.',
+                'created' => 'Product created successfully.',
+                'retrieved' => 'Product retrieved successfully.',
+                'updated' => 'Product updated successfully.',
+                'deleted' => 'Product deleted successfully.',
+            ],
+            'orders' => [
+                'listed' => 'Orders retrieved successfully.',
+                'retrieved' => 'Order retrieved successfully.',
+            ],
+        ],
         'catalog' => [
             'products_listed' => 'Catalog products retrieved successfully.',
         ],
@@ -18,11 +50,17 @@ return [
             'created' => 'Order created successfully.',
         ],
         'errors' => [
+            'forbidden' => 'You are not allowed to access this resource.',
+            'unauthenticated' => 'Authentication is required to access this resource.',
             'resource_not_found' => 'The requested resource was not found.',
+            'validation_failed' => 'The given data was invalid.',
         ],
     ],
     'errors' => [
         'empty_cart' => 'Cart is empty.',
+        'game_in_use' => 'The selected game cannot be deleted because products still reference it.',
+        'rarity_in_use' => 'The selected rarity cannot be deleted because products still reference it.',
+        'invalid_admin_credentials' => 'Admin credentials are invalid.',
         'invalid_cart_quantity' => 'Cart quantity must be greater than zero.',
         'invalid_product_reference' => 'The selected product does not exist.',
         'invalid_game_reference' => 'The selected game does not exist.',
