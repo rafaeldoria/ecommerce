@@ -20,7 +20,7 @@ class StoreGameRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                Rule::unique(Game::class, 'name')->withoutTrashed(),
+                Rule::unique(Game::class, 'name'),
             ],
         ];
     }

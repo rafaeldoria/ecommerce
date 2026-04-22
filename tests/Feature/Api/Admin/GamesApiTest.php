@@ -85,6 +85,31 @@ class GamesApiTest extends TestCase
     }
 
     #[Test]
+    public function soft_deleted_game_names_still_fail_validation_to_match_database_uniqueness(): void
+    {
+        $this->actingAsAdmin();
+        $game = Game::factory()->create(['name' => 'Dota 2']);
+        $game->delete();
+
+        $this->postJson('/api/admin/games', [
+            'name' => 'Dota 2',
+        ])
+            ->assertUnprocessable()
+            ->assertJsonPath('error', 'validation_failed')
+            ->assertJsonValidationErrors(['name']);
+    }
+
+    #[Test]
+    public function non_numeric_game_routes_return_not_found(): void
+    {
+        $this->actingAsAdmin();
+
+        $this->getJson('/api/admin/games/not-a-number')
+            ->assertNotFound()
+            ->assertJsonPath('error', 'resource_not_found');
+    }
+
+    #[Test]
     public function anonymous_users_cannot_access_admin_games(): void
     {
         $this->getJson('/api/admin/games')

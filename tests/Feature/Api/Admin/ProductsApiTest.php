@@ -114,6 +114,16 @@ class ProductsApiTest extends TestCase
     }
 
     #[Test]
+    public function non_numeric_product_routes_return_not_found(): void
+    {
+        $this->actingAsAdmin();
+
+        $this->getJson('/api/admin/products/not-a-number')
+            ->assertNotFound()
+            ->assertJsonPath('error', 'resource_not_found');
+    }
+
+    #[Test]
     public function anonymous_users_cannot_access_admin_products(): void
     {
         $this->getJson('/api/admin/products')

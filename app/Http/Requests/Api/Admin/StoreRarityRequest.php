@@ -20,7 +20,7 @@ class StoreRarityRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                Rule::unique(Rarity::class, 'name')->withoutTrashed(),
+                Rule::unique(Rarity::class, 'name'),
             ],
         ];
     }

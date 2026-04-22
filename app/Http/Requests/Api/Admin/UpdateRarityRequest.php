@@ -22,7 +22,7 @@ class UpdateRarityRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                Rule::unique(Rarity::class, 'name')->ignore($rarityId)->withoutTrashed(),
+                Rule::unique(Rarity::class, 'name')->ignore($rarityId),
             ],
         ];
     }

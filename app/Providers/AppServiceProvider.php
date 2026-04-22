@@ -8,6 +8,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -25,7 +26,13 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         RateLimiter::for('admin-login', function (Request $request): Limit {
-            return Limit::perMinute(5)->by((string) $request->input('username', $request->input('email', $request->ip())));
+            $identifier = $request->input('username', $request->input('email'));
+
+            if (!is_string($identifier) || trim($identifier) === '') {
+                return Limit::perMinute(5)->by($request->ip());
+            }
+
+            return Limit::perMinute(5)->by(Str::lower(trim($identifier)));
         });
     }
 }

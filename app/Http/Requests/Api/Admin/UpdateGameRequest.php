@@ -22,7 +22,7 @@ class UpdateGameRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                Rule::unique(Game::class, 'name')->ignore($gameId)->withoutTrashed(),
+                Rule::unique(Game::class, 'name')->ignore($gameId),
             ],
         ];
     }

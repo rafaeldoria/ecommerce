@@ -73,6 +73,29 @@ class AuthApiTest extends TestCase
     }
 
     #[Test]
+    public function login_throttle_uses_a_normalized_identifier_bucket(): void
+    {
+        User::factory()->admin()->create([
+            'username' => 'ops-admin',
+            'password' => 'secret-pass',
+        ]);
+
+        foreach (['ops-admin', ' ops-admin', 'ops-admin ', ' OPS-ADMIN ', 'ops-admin'] as $username) {
+            $this->postJson('/api/admin/auth/login', [
+                'username' => $username,
+                'password' => 'wrong-pass',
+                'device_name' => 'postman',
+            ])->assertUnprocessable();
+        }
+
+        $this->postJson('/api/admin/auth/login', [
+            'username' => '  ops-admin  ',
+            'password' => 'wrong-pass',
+            'device_name' => 'postman',
+        ])->assertStatus(429);
+    }
+
+    #[Test]
     public function login_rejects_customers(): void
     {
         User::factory()->customer()->create([

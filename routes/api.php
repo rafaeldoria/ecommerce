@@ -38,12 +38,16 @@ Route::prefix('admin')->group(function (): void {
         Route::get('/me', [AdminAuthController::class, 'me'])
             ->name('api.admin.me');
 
-        Route::apiResource('games', AdminGameController::class);
-        Route::apiResource('rarities', AdminRarityController::class);
-        Route::apiResource('products', AdminProductController::class);
+        Route::apiResource('games', AdminGameController::class)
+            ->where(['game' => '[0-9]+']);
+        Route::apiResource('rarities', AdminRarityController::class)
+            ->where(['rarity' => '[0-9]+']);
+        Route::apiResource('products', AdminProductController::class)
+            ->where(['product' => '[0-9]+']);
         Route::get('/orders', [AdminOrderController::class, 'index'])
             ->name('api.admin.orders.index');
         Route::get('/orders/{order}', [AdminOrderController::class, 'show'])
+            ->whereNumber('order')
             ->name('api.admin.orders.show');
     });
 });

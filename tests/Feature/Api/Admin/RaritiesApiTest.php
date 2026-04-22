@@ -85,6 +85,21 @@ class RaritiesApiTest extends TestCase
     }
 
     #[Test]
+    public function soft_deleted_rarity_names_still_fail_validation_to_match_database_uniqueness(): void
+    {
+        $this->actingAsAdmin();
+        $rarity = Rarity::factory()->create(['name' => 'Arcana']);
+        $rarity->delete();
+
+        $this->postJson('/api/admin/rarities', [
+            'name' => 'Arcana',
+        ])
+            ->assertUnprocessable()
+            ->assertJsonPath('error', 'validation_failed')
+            ->assertJsonValidationErrors(['name']);
+    }
+
+    #[Test]
     public function anonymous_users_cannot_access_admin_rarities(): void
     {
         $this->getJson('/api/admin/rarities')
