@@ -26,13 +26,32 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         RateLimiter::for('admin-login', function (Request $request): Limit {
-            $identifier = $request->input('username', $request->input('email'));
+            $identifier = $this->adminLoginIdentifier($request);
 
-            if (!is_string($identifier) || trim($identifier) === '') {
+            if ($identifier === null) {
                 return Limit::perMinute(5)->by($request->ip());
             }
 
-            return Limit::perMinute(5)->by(Str::lower(trim($identifier)));
+            return Limit::perMinute(5)->by($identifier);
         });
+    }
+
+    private function adminLoginIdentifier(Request $request): ?string
+    {
+        foreach (['username', 'email'] as $key) {
+            $identifier = $request->input($key);
+
+            if (!is_string($identifier)) {
+                continue;
+            }
+
+            $identifier = trim($identifier);
+
+            if ($identifier !== '') {
+                return Str::lower($identifier);
+            }
+        }
+
+        return null;
     }
 }

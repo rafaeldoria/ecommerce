@@ -96,6 +96,40 @@ class AuthApiTest extends TestCase
     }
 
     #[Test]
+    public function login_throttle_uses_email_when_username_is_empty(): void
+    {
+        User::factory()->admin()->create([
+            'email' => 'admin@example.com',
+            'password' => 'secret-pass',
+        ]);
+
+        $payloads = [
+            ['username' => null, 'email' => 'admin@example.com'],
+            ['username' => '', 'email' => ' admin@example.com '],
+            ['username' => '   ', 'email' => 'ADMIN@example.com'],
+            ['username' => null, 'email' => 'Admin@example.com '],
+            ['username' => '', 'email' => 'admin@example.com'],
+        ];
+
+        foreach ($payloads as $index => $payload) {
+            $this->withServerVariables(['REMOTE_ADDR' => "10.10.0.{$index}"])
+                ->postJson('/api/admin/auth/login', [
+                    ...$payload,
+                    'password' => 'wrong-pass',
+                    'device_name' => 'postman',
+                ])->assertUnprocessable();
+        }
+
+        $this->withServerVariables(['REMOTE_ADDR' => '10.10.0.99'])
+            ->postJson('/api/admin/auth/login', [
+                'username' => ' ',
+                'email' => ' admin@example.com ',
+                'password' => 'wrong-pass',
+                'device_name' => 'postman',
+            ])->assertStatus(429);
+    }
+
+    #[Test]
     public function login_rejects_customers(): void
     {
         User::factory()->customer()->create([
