@@ -516,7 +516,7 @@ For each significant feature or Action, implement at least:
 - Follow PSR-12
 - Enforce style with Laravel Pint
 - Use early returns and guard clauses by default
-- Do not use `else` in project code; prefer restructuring the flow with early returns or dedicated guard branches
+- Do not use `else`, `elseif`, or `else if` in project code; prefer restructuring the flow with early returns or dedicated guard branches
 - Keep unary operators adjacent to their operands, for example `!$value`, not `! $value`
 - Avoid duplication when it reduces clarity and maintainability risk
 - Keep methods focused and reasonably small

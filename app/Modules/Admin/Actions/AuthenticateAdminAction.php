@@ -15,7 +15,9 @@ class AuthenticateAdminAction
 
         if ($data->username !== null) {
             $query->where('username', $data->username);
-        } elseif ($data->email !== null) {
+        }
+
+        if ($data->username === null && $data->email !== null) {
             $query->where('email', $data->email);
         }
 
