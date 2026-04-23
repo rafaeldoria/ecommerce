@@ -20,6 +20,7 @@
 /storage/pail
 /vendor
 .codex/docs/waves/pt-BR/**
+.codex/docs/pt-BR/**
 _ide_helper.php
 Homestead.json
 Homestead.yaml
