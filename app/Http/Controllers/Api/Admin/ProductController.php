@@ -73,15 +73,23 @@ class ProductController extends ApiController
     {
         return $this->respond(function () use ($request, $product): JsonResponse {
             $validated = $request->validated();
+            $newImageUrl = $this->optionalStoredProductImageUrl($request->file('image'));
+            $previousImageUrl = $newImageUrl === null
+                ? null
+                : Product::query()->whereKey($product)->value('url_img');
 
             $updatedProduct = $this->updateProductAction->execute($product, new UpdateProductData(
                 name: (string) $validated['name'],
-                urlImg: $this->optionalStoredProductImageUrl($request->file('image')),
+                urlImg: $newImageUrl,
                 quantity: (int) $validated['quantity'],
                 price: (int) $validated['price'],
                 gameId: (int) $validated['game_id'],
                 rarityId: (int) $validated['rarity_id'],
             ));
+
+            if ($newImageUrl !== null) {
+                $this->deleteReplacedProductImage($previousImageUrl, $newImageUrl);
+            }
 
             $updatedProduct->load(['game:id,name', 'rarity:id,name']);
 
@@ -140,5 +148,44 @@ class ProductController extends ApiController
         }
 
         return Storage::disk('public')->url($path);
+    }
+
+    private function deleteReplacedProductImage(?string $previousImageUrl, string $newImageUrl): void
+    {
+        if ($previousImageUrl === null || $previousImageUrl === $newImageUrl) {
+            return;
+        }
+
+        $previousImagePath = $this->productImagePathFromPublicUrl($previousImageUrl);
+
+        if ($previousImagePath === null) {
+            return;
+        }
+
+        Storage::disk('public')->delete($previousImagePath);
+    }
+
+    private function productImagePathFromPublicUrl(string $url): ?string
+    {
+        $path = parse_url($url, PHP_URL_PATH);
+
+        if (!is_string($path)) {
+            return null;
+        }
+
+        $storagePath = ltrim($path, '/');
+        $publicPrefix = 'storage/';
+
+        if (!str_starts_with($storagePath, $publicPrefix)) {
+            return null;
+        }
+
+        $diskPath = rawurldecode(substr($storagePath, strlen($publicPrefix)));
+
+        if (!str_starts_with($diskPath, self::PRODUCT_IMAGE_DIRECTORY.'/')) {
+            return null;
+        }
+
+        return $diskPath;
     }
 }

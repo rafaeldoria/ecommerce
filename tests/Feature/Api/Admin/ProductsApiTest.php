@@ -79,6 +79,7 @@ class ProductsApiTest extends TestCase
         $this->assertStringContainsString('/storage/products/', $updatedProduct->url_img);
         $this->assertNotSame($createdImageUrl, $updatedProduct->url_img);
         Storage::disk('public')->assertExists($this->storagePathFromPublicUrl($updatedProduct->url_img));
+        Storage::disk('public')->assertMissing($this->storagePathFromPublicUrl($createdImageUrl));
 
         $this->deleteJson("/api/admin/products/{$createdProductId}")
             ->assertOk()
@@ -141,6 +142,7 @@ class ProductsApiTest extends TestCase
         $this->actingAsAdmin();
         $game = Game::factory()->create();
         $rarity = Rarity::factory()->create();
+        Storage::disk('public')->put('products/existing.png', 'existing image');
         $product = Product::factory()->create([
             'url_img' => '/storage/products/existing.png',
             'game_id' => $game->getKey(),
@@ -161,6 +163,7 @@ class ProductsApiTest extends TestCase
             'id' => $product->getKey(),
             'url_img' => '/storage/products/existing.png',
         ]);
+        Storage::disk('public')->assertExists('products/existing.png');
     }
 
     #[Test]
