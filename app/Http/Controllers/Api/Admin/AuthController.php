@@ -18,43 +18,39 @@ class AuthController extends ApiController
 
     public function login(AdminLoginRequest $request): JsonResponse
     {
-        return $this->respond(function () use ($request): JsonResponse {
-            $validated = $request->validated();
+        $validated = $request->validated();
 
-            $user = $this->authenticateAdminAction->execute(new AdminLoginData(
-                username: isset($validated['username']) ? (string) $validated['username'] : null,
-                email: isset($validated['email']) ? (string) $validated['email'] : null,
-                password: (string) $validated['password'],
-                deviceName: (string) $validated['device_name'],
-            ));
+        $user = $this->authenticateAdminAction->execute(new AdminLoginData(
+            username: isset($validated['username']) ? (string) $validated['username'] : null,
+            email: isset($validated['email']) ? (string) $validated['email'] : null,
+            password: (string) $validated['password'],
+            deviceName: (string) $validated['device_name'],
+        ));
 
-            return response()->json([
-                'message' => __('general.api.admin.auth.logged_in'),
-                'data' => [
-                    'token' => $user->createToken((string) $validated['device_name'])->plainTextToken,
-                    'user' => $this->userPayload($user),
-                ],
-            ]);
-        });
+        return response()->json([
+            'message' => __('general.api.admin.auth.logged_in'),
+            'data' => [
+                'token' => $user->createToken((string) $validated['device_name'])->plainTextToken,
+                'user' => $this->userPayload($user),
+            ],
+        ]);
     }
 
     public function logout(Request $request): JsonResponse
     {
-        return $this->respond(function () use ($request): JsonResponse {
-            $request->user()?->currentAccessToken()?->delete();
+        $request->user()?->currentAccessToken()?->delete();
 
-            return response()->json([
-                'message' => __('general.api.admin.auth.logged_out'),
-            ]);
-        });
+        return response()->json([
+            'message' => __('general.api.admin.auth.logged_out'),
+        ]);
     }
 
     public function me(Request $request): JsonResponse
     {
-        return $this->respond(fn () => response()->json([
+        return response()->json([
             'message' => __('general.api.admin.auth.profile_retrieved'),
             'data' => $this->userPayload($request->user()),
-        ]));
+        ]);
     }
 
     private function userPayload(?User $user): array

@@ -23,55 +23,49 @@ class GameController extends ApiController
 
     public function index(): JsonResponse
     {
-        return $this->respond(fn () => response()->json([
+        return response()->json([
             'message' => __('general.api.admin.games.listed'),
             'data' => $this->listAdminGamesQuery->execute()->map(
                 fn (Game $game): array => $this->payload($game)
             )->all(),
-        ]));
+        ]);
     }
 
     public function store(StoreGameRequest $request): JsonResponse
     {
-        return $this->respond(function () use ($request): JsonResponse {
-            $game = $this->createGameAction->execute((string) $request->validated('name'));
+        $game = $this->createGameAction->execute((string) $request->validated('name'));
 
-            return response()->json([
-                'message' => __('general.api.admin.games.created'),
-                'data' => $this->payload($game),
-            ], 201);
-        });
+        return response()->json([
+            'message' => __('general.api.admin.games.created'),
+            'data' => $this->payload($game),
+        ], 201);
     }
 
     public function show(Game $game): JsonResponse
     {
-        return $this->respond(fn () => response()->json([
+        return response()->json([
             'message' => __('general.api.admin.games.retrieved'),
             'data' => $this->payload($game),
-        ]));
+        ]);
     }
 
     public function update(UpdateGameRequest $request, int $game): JsonResponse
     {
-        return $this->respond(function () use ($request, $game): JsonResponse {
-            $updatedGame = $this->updateGameAction->execute($game, (string) $request->validated('name'));
+        $updatedGame = $this->updateGameAction->execute($game, (string) $request->validated('name'));
 
-            return response()->json([
-                'message' => __('general.api.admin.games.updated'),
-                'data' => $this->payload($updatedGame),
-            ]);
-        });
+        return response()->json([
+            'message' => __('general.api.admin.games.updated'),
+            'data' => $this->payload($updatedGame),
+        ]);
     }
 
     public function destroy(int $game): JsonResponse
     {
-        return $this->respond(function () use ($game): JsonResponse {
-            $this->deleteGameAction->execute($game);
+        $this->deleteGameAction->execute($game);
 
-            return response()->json([
-                'message' => __('general.api.admin.games.deleted'),
-            ]);
-        });
+        return response()->json([
+            'message' => __('general.api.admin.games.deleted'),
+        ]);
     }
 
     private function payload(Game $game): array

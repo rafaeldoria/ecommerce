@@ -2,16 +2,17 @@
 
 namespace App\Modules\Catalog\Actions;
 
+use App\Modules\Catalog\DomainServices\ProductWriteRules;
 use App\Modules\Catalog\DTOs\UpdateProductData;
-use App\Modules\Catalog\Exceptions\InvalidProductData;
-use App\Modules\Catalog\Exceptions\InvalidProductReference;
-use App\Modules\Catalog\Models\Game;
 use App\Modules\Catalog\Models\Product;
-use App\Modules\Catalog\Models\Rarity;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class UpdateProductAction
 {
+    public function __construct(
+        private readonly ProductWriteRules $productWriteRules,
+    ) {}
+
     public function execute(int $productId, UpdateProductData $data): Product
     {
         $product = Product::query()->find($productId);
@@ -20,8 +21,7 @@ class UpdateProductAction
             throw (new ModelNotFoundException)->setModel(Product::class, [$productId]);
         }
 
-        $this->guardData($data->price, $data->quantity);
-        $this->guardReferences($data->gameId, $data->rarityId);
+        $this->productWriteRules->assertValid($data->price, $data->quantity, $data->gameId, $data->rarityId);
 
         $attributes = [
             'name' => $data->name,
@@ -38,27 +38,5 @@ class UpdateProductAction
         $product->fill($attributes)->save();
 
         return $product->refresh();
-    }
-
-    private function guardData(int $price, int $quantity): void
-    {
-        if ($price < 0) {
-            throw new InvalidProductData(__('general.errors.invalid_product_price'));
-        }
-
-        if ($quantity < 0) {
-            throw new InvalidProductData(__('general.errors.invalid_product_quantity'));
-        }
-    }
-
-    private function guardReferences(int $gameId, int $rarityId): void
-    {
-        if (!Game::query()->whereKey($gameId)->exists()) {
-            throw new InvalidProductReference(__('general.errors.invalid_game_reference'));
-        }
-
-        if (!Rarity::query()->whereKey($rarityId)->exists()) {
-            throw new InvalidProductReference(__('general.errors.invalid_rarity_reference'));
-        }
     }
 }

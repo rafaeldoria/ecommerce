@@ -62,14 +62,18 @@ class AuthApiTest extends TestCase
             'password' => 'secret-pass',
         ]);
 
-        $this->postJson('/api/admin/auth/login', [
+        $response = $this->postJson('/api/admin/auth/login', [
             'username' => 'ops-admin',
             'password' => 'wrong-pass',
             'device_name' => 'postman',
-        ])
-            ->assertUnprocessable()
-            ->assertJsonPath('error', 'invalid_admin_credentials')
-            ->assertJsonPath('message', __('general.errors.invalid_admin_credentials'));
+        ]);
+
+        $this->assertProblemDetails(
+            $response,
+            'invalid_admin_credentials',
+            422,
+            __('general.errors.invalid_admin_credentials'),
+        );
     }
 
     #[Test]
@@ -137,13 +141,18 @@ class AuthApiTest extends TestCase
             'password' => 'secret-pass',
         ]);
 
-        $this->postJson('/api/admin/auth/login', [
+        $response = $this->postJson('/api/admin/auth/login', [
             'username' => 'shopper',
             'password' => 'secret-pass',
             'device_name' => 'browser',
-        ])
-            ->assertUnprocessable()
-            ->assertJsonPath('error', 'invalid_admin_credentials');
+        ]);
+
+        $this->assertProblemDetails(
+            $response,
+            'invalid_admin_credentials',
+            422,
+            __('general.errors.invalid_admin_credentials'),
+        );
     }
 
     #[Test]
@@ -184,10 +193,14 @@ class AuthApiTest extends TestCase
     #[Test]
     public function admin_profile_requires_authentication(): void
     {
-        $this->getJson('/api/admin/me')
-            ->assertUnauthorized()
-            ->assertJsonPath('error', 'unauthenticated')
-            ->assertJsonPath('message', __('general.api.errors.unauthenticated'));
+        $response = $this->getJson('/api/admin/me');
+
+        $this->assertProblemDetails(
+            $response,
+            'unauthenticated',
+            401,
+            __('general.api.errors.unauthenticated'),
+        );
     }
 
     #[Test]
@@ -195,21 +208,32 @@ class AuthApiTest extends TestCase
     {
         $customer = User::factory()->customer()->create();
 
-        $this->withToken($customer->createToken('shopper')->plainTextToken)
-            ->getJson('/api/admin/me')
-            ->assertForbidden()
-            ->assertJsonPath('error', 'forbidden')
-            ->assertJsonPath('message', __('general.api.errors.forbidden'));
+        $response = $this->withToken($customer->createToken('shopper')->plainTextToken)
+            ->getJson('/api/admin/me');
+
+        $this->assertProblemDetails(
+            $response,
+            'forbidden',
+            403,
+            __('general.api.errors.forbidden'),
+        );
     }
 
     #[Test]
     public function login_requires_a_username_or_email_and_device_name(): void
     {
-        $this->postJson('/api/admin/auth/login', [
+        $response = $this->postJson('/api/admin/auth/login', [
             'password' => 'secret-pass',
-        ])
-            ->assertUnprocessable()
-            ->assertJsonPath('error', 'validation_failed')
+        ]);
+
+        $this->assertProblemDetails(
+            $response,
+            'validation_failed',
+            422,
+            __('general.api.errors.validation_failed'),
+        );
+
+        $response
             ->assertJsonValidationErrors(['username', 'email', 'device_name']);
     }
 }

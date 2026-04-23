@@ -64,10 +64,14 @@ class RaritiesApiTest extends TestCase
             'rarity_id' => $rarity->getKey(),
         ]);
 
-        $this->deleteJson("/api/admin/rarities/{$rarity->getKey()}")
-            ->assertUnprocessable()
-            ->assertJsonPath('error', 'catalog_resource_in_use')
-            ->assertJsonPath('message', __('general.errors.rarity_in_use'));
+        $response = $this->deleteJson("/api/admin/rarities/{$rarity->getKey()}");
+
+        $this->assertProblemDetails(
+            $response,
+            'catalog_resource_in_use',
+            422,
+            __('general.errors.rarity_in_use'),
+        );
     }
 
     #[Test]
@@ -76,11 +80,18 @@ class RaritiesApiTest extends TestCase
         $this->actingAsAdmin();
         Rarity::factory()->create(['name' => 'Arcana']);
 
-        $this->postJson('/api/admin/rarities', [
+        $response = $this->postJson('/api/admin/rarities', [
             'name' => 'Arcana',
-        ])
-            ->assertUnprocessable()
-            ->assertJsonPath('error', 'validation_failed')
+        ]);
+
+        $this->assertProblemDetails(
+            $response,
+            'validation_failed',
+            422,
+            __('general.api.errors.validation_failed'),
+        );
+
+        $response
             ->assertJsonValidationErrors(['name']);
     }
 
@@ -91,20 +102,32 @@ class RaritiesApiTest extends TestCase
         $rarity = Rarity::factory()->create(['name' => 'Arcana']);
         $rarity->delete();
 
-        $this->postJson('/api/admin/rarities', [
+        $response = $this->postJson('/api/admin/rarities', [
             'name' => 'Arcana',
-        ])
-            ->assertUnprocessable()
-            ->assertJsonPath('error', 'validation_failed')
+        ]);
+
+        $this->assertProblemDetails(
+            $response,
+            'validation_failed',
+            422,
+            __('general.api.errors.validation_failed'),
+        );
+
+        $response
             ->assertJsonValidationErrors(['name']);
     }
 
     #[Test]
     public function anonymous_users_cannot_access_admin_rarities(): void
     {
-        $this->getJson('/api/admin/rarities')
-            ->assertUnauthorized()
-            ->assertJsonPath('error', 'unauthenticated');
+        $response = $this->getJson('/api/admin/rarities');
+
+        $this->assertProblemDetails(
+            $response,
+            'unauthenticated',
+            401,
+            __('general.api.errors.unauthenticated'),
+        );
     }
 
     #[Test]
@@ -112,8 +135,13 @@ class RaritiesApiTest extends TestCase
     {
         $this->actingAsCustomer();
 
-        $this->getJson('/api/admin/rarities')
-            ->assertForbidden()
-            ->assertJsonPath('error', 'forbidden');
+        $response = $this->getJson('/api/admin/rarities');
+
+        $this->assertProblemDetails(
+            $response,
+            'forbidden',
+            403,
+            __('general.api.errors.forbidden'),
+        );
     }
 }

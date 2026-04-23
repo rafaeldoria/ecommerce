@@ -5,79 +5,82 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Api\ApiController;
 use App\Http\Requests\Api\Admin\StoreProductRequest;
 use App\Http\Requests\Api\Admin\UpdateProductRequest;
+use App\Http\Resources\Api\ProductResource;
 use App\Modules\Catalog\Actions\CreateProductAction;
 use App\Modules\Catalog\Actions\DeleteProductAction;
 use App\Modules\Catalog\Actions\UpdateProductAction;
 use App\Modules\Catalog\DTOs\CreateProductData;
 use App\Modules\Catalog\DTOs\UpdateProductData;
 use App\Modules\Catalog\Models\Product;
+use App\Modules\Catalog\ProductImages\ProductImageStorage;
 use App\Modules\Catalog\Queries\ListAdminProductsQuery;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
-use RuntimeException;
+use Throwable;
 
 class ProductController extends ApiController
 {
-    private const string PRODUCT_IMAGE_DIRECTORY = 'products';
-
     public function __construct(
         private readonly ListAdminProductsQuery $listAdminProductsQuery,
         private readonly CreateProductAction $createProductAction,
         private readonly UpdateProductAction $updateProductAction,
         private readonly DeleteProductAction $deleteProductAction,
+        private readonly ProductImageStorage $productImageStorage,
     ) {}
 
     public function index(): JsonResponse
     {
-        return $this->respond(fn () => response()->json([
+        return response()->json([
             'message' => __('general.api.admin.products.listed'),
-            'data' => $this->listAdminProductsQuery->execute()->map(
-                fn (Product $product): array => $this->payload($product)
-            )->all(),
-        ]));
+            'data' => ProductResource::collection($this->listAdminProductsQuery->execute())->resolve(),
+        ]);
     }
 
     public function store(StoreProductRequest $request): JsonResponse
     {
-        return $this->respond(function () use ($request): JsonResponse {
-            $validated = $request->validated();
+        $validated = $request->validated();
+        $imageUrl = $this->storeProductImage($request->file('image'));
 
+        try {
             $product = $this->createProductAction->execute(new CreateProductData(
                 name: (string) $validated['name'],
-                urlImg: $this->storeProductImage($request->file('image')),
+                urlImg: $imageUrl,
                 quantity: (int) $validated['quantity'],
                 price: (int) $validated['price'],
                 gameId: (int) $validated['game_id'],
                 rarityId: (int) $validated['rarity_id'],
             ));
+        } catch (Throwable $exception) {
+            $this->productImageStorage->deleteIfOwned($imageUrl);
 
-            $product->load(['game:id,name', 'rarity:id,name']);
+            throw $exception;
+        }
 
-            return response()->json([
-                'message' => __('general.api.admin.products.created'),
-                'data' => $this->payload($product),
-            ], 201);
-        });
+        $product->load(['game:id,name', 'rarity:id,name']);
+
+        return response()->json([
+            'message' => __('general.api.admin.products.created'),
+            'data' => ProductResource::make($product)->resolve(),
+        ], 201);
     }
 
     public function show(Product $product): JsonResponse
     {
-        return $this->respond(fn () => response()->json([
+        return response()->json([
             'message' => __('general.api.admin.products.retrieved'),
-            'data' => $this->payload($product->loadMissing(['game:id,name', 'rarity:id,name'])),
-        ]));
+            'data' => ProductResource::make($product->loadMissing(['game:id,name', 'rarity:id,name']))->resolve(),
+        ]);
     }
 
     public function update(UpdateProductRequest $request, int $product): JsonResponse
     {
-        return $this->respond(function () use ($request, $product): JsonResponse {
-            $validated = $request->validated();
-            $newImageUrl = $this->optionalStoredProductImageUrl($request->file('image'));
-            $previousImageUrl = $newImageUrl === null
-                ? null
-                : Product::query()->whereKey($product)->value('url_img');
+        $validated = $request->validated();
+        $newImageUrl = $this->optionalStoredProductImageUrl($request->file('image'));
+        $previousImageUrl = $newImageUrl === null
+            ? null
+            : Product::query()->whereKey($product)->value('url_img');
 
+        try {
             $updatedProduct = $this->updateProductAction->execute($product, new UpdateProductData(
                 name: (string) $validated['name'],
                 urlImg: $newImageUrl,
@@ -86,48 +89,31 @@ class ProductController extends ApiController
                 gameId: (int) $validated['game_id'],
                 rarityId: (int) $validated['rarity_id'],
             ));
+        } catch (Throwable $exception) {
+            $this->productImageStorage->deleteIfOwned($newImageUrl);
 
-            if ($newImageUrl !== null) {
-                $this->deleteReplacedProductImage($previousImageUrl, $newImageUrl);
-            }
+            throw $exception;
+        }
 
-            $updatedProduct->load(['game:id,name', 'rarity:id,name']);
+        if ($newImageUrl !== null) {
+            $this->productImageStorage->deleteReplaced($previousImageUrl, $newImageUrl);
+        }
 
-            return response()->json([
-                'message' => __('general.api.admin.products.updated'),
-                'data' => $this->payload($updatedProduct),
-            ]);
-        });
+        $updatedProduct->load(['game:id,name', 'rarity:id,name']);
+
+        return response()->json([
+            'message' => __('general.api.admin.products.updated'),
+            'data' => ProductResource::make($updatedProduct)->resolve(),
+        ]);
     }
 
     public function destroy(int $product): JsonResponse
     {
-        return $this->respond(function () use ($product): JsonResponse {
-            $this->deleteProductAction->execute($product);
+        $this->deleteProductAction->execute($product);
 
-            return response()->json([
-                'message' => __('general.api.admin.products.deleted'),
-            ]);
-        });
-    }
-
-    private function payload(Product $product): array
-    {
-        return [
-            'id' => $product->getKey(),
-            'name' => $product->name,
-            'image_url' => $product->url_img,
-            'quantity' => $product->quantity,
-            'price' => $product->price,
-            'game' => [
-                'id' => $product->game->getKey(),
-                'name' => $product->game->name,
-            ],
-            'rarity' => [
-                'id' => $product->rarity->getKey(),
-                'name' => $product->rarity->name,
-            ],
-        ];
+        return response()->json([
+            'message' => __('general.api.admin.products.deleted'),
+        ]);
     }
 
     private function optionalStoredProductImageUrl(mixed $image): ?string
@@ -141,51 +127,6 @@ class ProductController extends ApiController
 
     private function storeProductImage(UploadedFile $image): string
     {
-        $path = $image->store(self::PRODUCT_IMAGE_DIRECTORY, 'public');
-
-        if ($path === false) {
-            throw new RuntimeException(__('general.errors.product_image_storage_failed'));
-        }
-
-        return Storage::disk('public')->url($path);
-    }
-
-    private function deleteReplacedProductImage(?string $previousImageUrl, string $newImageUrl): void
-    {
-        if ($previousImageUrl === null || $previousImageUrl === $newImageUrl) {
-            return;
-        }
-
-        $previousImagePath = $this->productImagePathFromPublicUrl($previousImageUrl);
-
-        if ($previousImagePath === null) {
-            return;
-        }
-
-        Storage::disk('public')->delete($previousImagePath);
-    }
-
-    private function productImagePathFromPublicUrl(string $url): ?string
-    {
-        $path = parse_url($url, PHP_URL_PATH);
-
-        if (!is_string($path)) {
-            return null;
-        }
-
-        $storagePath = ltrim($path, '/');
-        $publicPrefix = 'storage/';
-
-        if (!str_starts_with($storagePath, $publicPrefix)) {
-            return null;
-        }
-
-        $diskPath = rawurldecode(substr($storagePath, strlen($publicPrefix)));
-
-        if (!str_starts_with($diskPath, self::PRODUCT_IMAGE_DIRECTORY.'/')) {
-            return null;
-        }
-
-        return $diskPath;
+        return $this->productImageStorage->store($image);
     }
 }

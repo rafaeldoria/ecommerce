@@ -47,8 +47,16 @@ class CatalogApiTest extends TestCase
     #[Test]
     public function it_validates_catalog_filters(): void
     {
-        $this->getJson('/api/catalog/products?game_id=999')
-            ->assertUnprocessable()
+        $response = $this->getJson('/api/catalog/products?game_id=999');
+
+        $this->assertProblemDetails(
+            $response,
+            'validation_failed',
+            422,
+            __('general.api.errors.validation_failed'),
+        );
+
+        $response
             ->assertJsonValidationErrors(['game_id']);
     }
 }

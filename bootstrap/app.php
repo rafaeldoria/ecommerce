@@ -1,10 +1,20 @@
 <?php
 
 use App\Http\Middleware\EnsureUserIsAdmin;
+use App\Http\Responses\ApiProblemDetails;
 use App\Modules\Admin\Exceptions\InvalidAdminCredentials;
+use App\Modules\Cart\Exceptions\EmptyCart;
+use App\Modules\Cart\Exceptions\InvalidCartQuantity;
+use App\Modules\Cart\Exceptions\InvalidProductReference as CartInvalidProductReference;
 use App\Modules\Catalog\Exceptions\CatalogResourceInUse;
+use App\Modules\Catalog\Exceptions\InvalidProductData;
+use App\Modules\Catalog\Exceptions\InvalidProductReference as CatalogInvalidProductReference;
+use App\Modules\Catalog\Exceptions\ProductImageStorageFailed;
+use App\Modules\Orders\Exceptions\InsufficientStock;
+use App\Modules\Orders\Exceptions\InvalidOrderContact;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -27,41 +37,36 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $renderJsonError = static function (string $message, string $error, int $status): JsonResponse {
-            return response()->json([
-                'message' => $message,
-                'error' => $error,
-            ], $status);
-        };
-
-        $exceptions->render(function (AuthenticationException $exception, Request $request) use ($renderJsonError): ?JsonResponse {
+        $exceptions->render(function (AuthenticationException $exception, Request $request): ?JsonResponse {
             if (!$request->is('api/*')) {
                 return null;
             }
 
-            return $renderJsonError(__('general.api.errors.unauthenticated'), 'unauthenticated', 401);
+            return ApiProblemDetails::make($request, 'unauthenticated', __('general.api.errors.unauthenticated'), 401);
         });
 
-        $exceptions->render(function (AuthorizationException $exception, Request $request) use ($renderJsonError): ?JsonResponse {
+        $exceptions->render(function (AuthorizationException $exception, Request $request): ?JsonResponse {
             if (!$request->is('api/*')) {
                 return null;
             }
 
-            return $renderJsonError(
-                $exception->getMessage() !== '' ? $exception->getMessage() : __('general.api.errors.forbidden'),
+            return ApiProblemDetails::make(
+                $request,
                 'forbidden',
+                $exception->getMessage() !== '' ? $exception->getMessage() : __('general.api.errors.forbidden'),
                 403,
             );
         });
 
-        $exceptions->render(function (AccessDeniedHttpException $exception, Request $request) use ($renderJsonError): ?JsonResponse {
+        $exceptions->render(function (AccessDeniedHttpException $exception, Request $request): ?JsonResponse {
             if (!$request->is('api/*')) {
                 return null;
             }
 
-            return $renderJsonError(
-                $exception->getMessage() !== '' ? $exception->getMessage() : __('general.api.errors.forbidden'),
+            return ApiProblemDetails::make(
+                $request,
                 'forbidden',
+                $exception->getMessage() !== '' ? $exception->getMessage() : __('general.api.errors.forbidden'),
                 403,
             );
         });
@@ -71,34 +76,103 @@ return Application::configure(basePath: dirname(__DIR__))
                 return null;
             }
 
-            return response()->json([
-                'message' => __('general.api.errors.validation_failed'),
-                'error' => 'validation_failed',
-                'errors' => $exception->errors(),
-            ], 422);
+            return ApiProblemDetails::make(
+                $request,
+                'validation_failed',
+                __('general.api.errors.validation_failed'),
+                422,
+                errors: $exception->errors(),
+            );
         });
 
-        $exceptions->render(function (NotFoundHttpException $exception, Request $request) use ($renderJsonError): ?JsonResponse {
+        $exceptions->render(function (NotFoundHttpException $exception, Request $request): ?JsonResponse {
             if (!$request->is('api/*')) {
                 return null;
             }
 
-            return $renderJsonError(__('general.api.errors.resource_not_found'), 'resource_not_found', 404);
+            return ApiProblemDetails::make($request, 'resource_not_found', __('general.api.errors.resource_not_found'), 404);
         });
 
-        $exceptions->render(function (InvalidAdminCredentials $exception, Request $request) use ($renderJsonError): ?JsonResponse {
+        $exceptions->render(function (ModelNotFoundException $exception, Request $request): ?JsonResponse {
             if (!$request->is('api/*')) {
                 return null;
             }
 
-            return $renderJsonError($exception->getMessage(), 'invalid_admin_credentials', 422);
+            return ApiProblemDetails::make($request, 'resource_not_found', __('general.api.errors.resource_not_found'), 404);
         });
 
-        $exceptions->render(function (CatalogResourceInUse $exception, Request $request) use ($renderJsonError): ?JsonResponse {
+        $exceptions->render(function (InvalidAdminCredentials $exception, Request $request): ?JsonResponse {
             if (!$request->is('api/*')) {
                 return null;
             }
 
-            return $renderJsonError($exception->getMessage(), 'catalog_resource_in_use', 422);
+            return ApiProblemDetails::make($request, 'invalid_admin_credentials', $exception->getMessage(), 422);
+        });
+
+        $exceptions->render(function (CatalogResourceInUse $exception, Request $request): ?JsonResponse {
+            if (!$request->is('api/*')) {
+                return null;
+            }
+
+            return ApiProblemDetails::make($request, 'catalog_resource_in_use', $exception->getMessage(), 422);
+        });
+
+        $exceptions->render(function (
+            CartInvalidProductReference|CatalogInvalidProductReference $exception,
+            Request $request
+        ): ?JsonResponse {
+            if (!$request->is('api/*')) {
+                return null;
+            }
+
+            return ApiProblemDetails::make($request, 'invalid_product_reference', $exception->getMessage(), 404);
+        });
+
+        $exceptions->render(function (InvalidCartQuantity $exception, Request $request): ?JsonResponse {
+            if (!$request->is('api/*')) {
+                return null;
+            }
+
+            return ApiProblemDetails::make($request, 'invalid_cart_quantity', $exception->getMessage(), 422);
+        });
+
+        $exceptions->render(function (EmptyCart $exception, Request $request): ?JsonResponse {
+            if (!$request->is('api/*')) {
+                return null;
+            }
+
+            return ApiProblemDetails::make($request, 'empty_cart', $exception->getMessage(), 422);
+        });
+
+        $exceptions->render(function (InvalidOrderContact $exception, Request $request): ?JsonResponse {
+            if (!$request->is('api/*')) {
+                return null;
+            }
+
+            return ApiProblemDetails::make($request, 'invalid_order_contact', $exception->getMessage(), 422);
+        });
+
+        $exceptions->render(function (InsufficientStock $exception, Request $request): ?JsonResponse {
+            if (!$request->is('api/*')) {
+                return null;
+            }
+
+            return ApiProblemDetails::make($request, 'insufficient_stock', $exception->getMessage(), 422);
+        });
+
+        $exceptions->render(function (InvalidProductData $exception, Request $request): ?JsonResponse {
+            if (!$request->is('api/*')) {
+                return null;
+            }
+
+            return ApiProblemDetails::make($request, 'invalid_product_data', $exception->getMessage(), 422);
+        });
+
+        $exceptions->render(function (ProductImageStorageFailed $exception, Request $request): ?JsonResponse {
+            if (!$request->is('api/*')) {
+                return null;
+            }
+
+            return ApiProblemDetails::make($request, 'product_image_storage_failed', $exception->getMessage(), 500);
         });
     })->create();

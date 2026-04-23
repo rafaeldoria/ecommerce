@@ -64,10 +64,14 @@ class GamesApiTest extends TestCase
             'rarity_id' => $rarity->getKey(),
         ]);
 
-        $this->deleteJson("/api/admin/games/{$game->getKey()}")
-            ->assertUnprocessable()
-            ->assertJsonPath('error', 'catalog_resource_in_use')
-            ->assertJsonPath('message', __('general.errors.game_in_use'));
+        $response = $this->deleteJson("/api/admin/games/{$game->getKey()}");
+
+        $this->assertProblemDetails(
+            $response,
+            'catalog_resource_in_use',
+            422,
+            __('general.errors.game_in_use'),
+        );
     }
 
     #[Test]
@@ -76,11 +80,18 @@ class GamesApiTest extends TestCase
         $this->actingAsAdmin();
         Game::factory()->create(['name' => 'Dota 2']);
 
-        $this->postJson('/api/admin/games', [
+        $response = $this->postJson('/api/admin/games', [
             'name' => 'Dota 2',
-        ])
-            ->assertUnprocessable()
-            ->assertJsonPath('error', 'validation_failed')
+        ]);
+
+        $this->assertProblemDetails(
+            $response,
+            'validation_failed',
+            422,
+            __('general.api.errors.validation_failed'),
+        );
+
+        $response
             ->assertJsonValidationErrors(['name']);
     }
 
@@ -91,11 +102,18 @@ class GamesApiTest extends TestCase
         $game = Game::factory()->create(['name' => 'Dota 2']);
         $game->delete();
 
-        $this->postJson('/api/admin/games', [
+        $response = $this->postJson('/api/admin/games', [
             'name' => 'Dota 2',
-        ])
-            ->assertUnprocessable()
-            ->assertJsonPath('error', 'validation_failed')
+        ]);
+
+        $this->assertProblemDetails(
+            $response,
+            'validation_failed',
+            422,
+            __('general.api.errors.validation_failed'),
+        );
+
+        $response
             ->assertJsonValidationErrors(['name']);
     }
 
@@ -104,17 +122,27 @@ class GamesApiTest extends TestCase
     {
         $this->actingAsAdmin();
 
-        $this->getJson('/api/admin/games/not-a-number')
-            ->assertNotFound()
-            ->assertJsonPath('error', 'resource_not_found');
+        $response = $this->getJson('/api/admin/games/not-a-number');
+
+        $this->assertProblemDetails(
+            $response,
+            'resource_not_found',
+            404,
+            __('general.api.errors.resource_not_found'),
+        );
     }
 
     #[Test]
     public function anonymous_users_cannot_access_admin_games(): void
     {
-        $this->getJson('/api/admin/games')
-            ->assertUnauthorized()
-            ->assertJsonPath('error', 'unauthenticated');
+        $response = $this->getJson('/api/admin/games');
+
+        $this->assertProblemDetails(
+            $response,
+            'unauthenticated',
+            401,
+            __('general.api.errors.unauthenticated'),
+        );
     }
 
     #[Test]
@@ -122,8 +150,13 @@ class GamesApiTest extends TestCase
     {
         $this->actingAsCustomer();
 
-        $this->getJson('/api/admin/games')
-            ->assertForbidden()
-            ->assertJsonPath('error', 'forbidden');
+        $response = $this->getJson('/api/admin/games');
+
+        $this->assertProblemDetails(
+            $response,
+            'forbidden',
+            403,
+            __('general.api.errors.forbidden'),
+        );
     }
 }

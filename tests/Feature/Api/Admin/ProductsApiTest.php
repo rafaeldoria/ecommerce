@@ -2,9 +2,16 @@
 
 namespace Tests\Feature\Api\Admin;
 
+use App\Modules\Catalog\Actions\CreateProductAction;
+use App\Modules\Catalog\Actions\UpdateProductAction;
+use App\Modules\Catalog\DTOs\CreateProductData;
+use App\Modules\Catalog\DTOs\UpdateProductData;
+use App\Modules\Catalog\Exceptions\InvalidProductData;
+use App\Modules\Catalog\Exceptions\ProductImageStorageFailed;
 use App\Modules\Catalog\Models\Game;
 use App\Modules\Catalog\Models\Product;
 use App\Modules\Catalog\Models\Rarity;
+use App\Modules\Catalog\ProductImages\ProductImageStorage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -99,16 +106,23 @@ class ProductsApiTest extends TestCase
         $rarity = Rarity::factory()->create();
         $rarity->delete();
 
-        $this->post('/api/admin/products', [
+        $response = $this->post('/api/admin/products', [
             'name' => 'Broken Product',
             'image' => $this->fakePngUpload('item.png'),
             'quantity' => -1,
             'price' => -20,
             'game_id' => $game->getKey(),
             'rarity_id' => $rarity->getKey(),
-        ], ['Accept' => 'application/json'])
-            ->assertUnprocessable()
-            ->assertJsonPath('error', 'validation_failed')
+        ], ['Accept' => 'application/json']);
+
+        $this->assertProblemDetails(
+            $response,
+            'validation_failed',
+            422,
+            __('general.api.errors.validation_failed'),
+        );
+
+        $response
             ->assertJsonValidationErrors(['quantity', 'price', 'game_id', 'rarity_id']);
     }
 
@@ -121,17 +135,58 @@ class ProductsApiTest extends TestCase
         $game = Game::factory()->create();
         $rarity = Rarity::factory()->create();
 
-        $this->post('/api/admin/products', [
+        $response = $this->post('/api/admin/products', [
             'name' => 'Invalid Image Product',
             'image' => UploadedFile::fake()->create('notes.txt', 10, 'text/plain'),
             'quantity' => 1,
             'price' => 1000,
             'game_id' => $game->getKey(),
             'rarity_id' => $rarity->getKey(),
-        ], ['Accept' => 'application/json'])
-            ->assertUnprocessable()
-            ->assertJsonPath('error', 'validation_failed')
+        ], ['Accept' => 'application/json']);
+
+        $this->assertProblemDetails(
+            $response,
+            'validation_failed',
+            422,
+            __('general.api.errors.validation_failed'),
+        );
+
+        $response
             ->assertJsonValidationErrors(['image']);
+    }
+
+    #[Test]
+    public function product_create_returns_problem_details_when_image_storage_fails(): void
+    {
+        Storage::fake('public');
+
+        $this->actingAsAdmin();
+        $game = Game::factory()->create();
+        $rarity = Rarity::factory()->create();
+
+        $this->app->instance(ProductImageStorage::class, new class extends ProductImageStorage
+        {
+            public function store(UploadedFile $image): string
+            {
+                throw new ProductImageStorageFailed(__('general.errors.product_image_storage_failed'));
+            }
+        });
+
+        $response = $this->post('/api/admin/products', [
+            'name' => 'Image Failure Product',
+            'image' => $this->fakePngUpload('failed-storage.png'),
+            'quantity' => 1,
+            'price' => 1000,
+            'game_id' => $game->getKey(),
+            'rarity_id' => $rarity->getKey(),
+        ], ['Accept' => 'application/json']);
+
+        $this->assertProblemDetails(
+            $response,
+            'product_image_storage_failed',
+            500,
+            __('general.errors.product_image_storage_failed'),
+        );
     }
 
     #[Test]
@@ -167,6 +222,89 @@ class ProductsApiTest extends TestCase
     }
 
     #[Test]
+    public function product_create_cleans_up_uploaded_image_when_persistence_fails(): void
+    {
+        Storage::fake('public');
+
+        $this->actingAsAdmin();
+        $game = Game::factory()->create();
+        $rarity = Rarity::factory()->create();
+
+        $this->app->instance(CreateProductAction::class, new class extends CreateProductAction
+        {
+            public function __construct() {}
+
+            public function execute(CreateProductData $data): Product
+            {
+                throw new InvalidProductData(__('general.errors.invalid_product_price'));
+            }
+        });
+
+        $response = $this->post('/api/admin/products', [
+            'name' => 'Failed Product',
+            'image' => $this->fakePngUpload('failed.png'),
+            'quantity' => 1,
+            'price' => 1000,
+            'game_id' => $game->getKey(),
+            'rarity_id' => $rarity->getKey(),
+        ], ['Accept' => 'application/json']);
+
+        $this->assertProblemDetails(
+            $response,
+            'invalid_product_data',
+            422,
+            __('general.errors.invalid_product_price'),
+        );
+
+        $this->assertSame([], Storage::disk('public')->allFiles('products'));
+    }
+
+    #[Test]
+    public function product_update_cleans_up_new_image_when_persistence_fails(): void
+    {
+        Storage::fake('public');
+
+        $this->actingAsAdmin();
+        $game = Game::factory()->create();
+        $rarity = Rarity::factory()->create();
+        Storage::disk('public')->put('products/existing.png', 'existing image');
+        $product = Product::factory()->create([
+            'url_img' => '/storage/products/existing.png',
+            'game_id' => $game->getKey(),
+            'rarity_id' => $rarity->getKey(),
+        ]);
+
+        $this->app->instance(UpdateProductAction::class, new class extends UpdateProductAction
+        {
+            public function __construct() {}
+
+            public function execute(int $productId, UpdateProductData $data): Product
+            {
+                throw new InvalidProductData(__('general.errors.invalid_product_quantity'));
+            }
+        });
+
+        $response = $this->patch("/api/admin/products/{$product->getKey()}", [
+            'name' => 'Failed Product Update',
+            'image' => $this->fakePngUpload('failed-update.png'),
+            'quantity' => 1,
+            'price' => 1000,
+            'game_id' => $game->getKey(),
+            'rarity_id' => $rarity->getKey(),
+        ], ['Accept' => 'application/json']);
+
+        $this->assertProblemDetails(
+            $response,
+            'invalid_product_data',
+            422,
+            __('general.errors.invalid_product_quantity'),
+        );
+
+        Storage::disk('public')->assertExists('products/existing.png');
+        $this->assertSame(['products/existing.png'], Storage::disk('public')->allFiles('products'));
+    }
+
+    #[Test]
     public function public_catalog_keeps_hiding_zero_quantity_products(): void
     {
         $this->actingAsAdmin();
@@ -189,17 +327,27 @@ class ProductsApiTest extends TestCase
     {
         $this->actingAsAdmin();
 
-        $this->getJson('/api/admin/products/not-a-number')
-            ->assertNotFound()
-            ->assertJsonPath('error', 'resource_not_found');
+        $response = $this->getJson('/api/admin/products/not-a-number');
+
+        $this->assertProblemDetails(
+            $response,
+            'resource_not_found',
+            404,
+            __('general.api.errors.resource_not_found'),
+        );
     }
 
     #[Test]
     public function anonymous_users_cannot_access_admin_products(): void
     {
-        $this->getJson('/api/admin/products')
-            ->assertUnauthorized()
-            ->assertJsonPath('error', 'unauthenticated');
+        $response = $this->getJson('/api/admin/products');
+
+        $this->assertProblemDetails(
+            $response,
+            'unauthenticated',
+            401,
+            __('general.api.errors.unauthenticated'),
+        );
     }
 
     #[Test]
@@ -207,9 +355,14 @@ class ProductsApiTest extends TestCase
     {
         $this->actingAsCustomer();
 
-        $this->getJson('/api/admin/products')
-            ->assertForbidden()
-            ->assertJsonPath('error', 'forbidden');
+        $response = $this->getJson('/api/admin/products');
+
+        $this->assertProblemDetails(
+            $response,
+            'forbidden',
+            403,
+            __('general.api.errors.forbidden'),
+        );
     }
 
     private function storagePathFromPublicUrl(string $url): string

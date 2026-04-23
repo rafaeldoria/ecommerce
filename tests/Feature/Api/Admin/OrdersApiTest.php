@@ -51,9 +51,14 @@ class OrdersApiTest extends TestCase
     #[Test]
     public function anonymous_users_cannot_access_admin_orders(): void
     {
-        $this->getJson('/api/admin/orders')
-            ->assertUnauthorized()
-            ->assertJsonPath('error', 'unauthenticated');
+        $response = $this->getJson('/api/admin/orders');
+
+        $this->assertProblemDetails(
+            $response,
+            'unauthenticated',
+            401,
+            __('general.api.errors.unauthenticated'),
+        );
     }
 
     #[Test]
@@ -61,8 +66,13 @@ class OrdersApiTest extends TestCase
     {
         $this->actingAsCustomer();
 
-        $this->getJson('/api/admin/orders')
-            ->assertForbidden()
-            ->assertJsonPath('error', 'forbidden');
+        $response = $this->getJson('/api/admin/orders');
+
+        $this->assertProblemDetails(
+            $response,
+            'forbidden',
+            403,
+            __('general.api.errors.forbidden'),
+        );
     }
 }
