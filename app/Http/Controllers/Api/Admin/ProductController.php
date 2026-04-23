@@ -13,9 +13,14 @@ use App\Modules\Catalog\DTOs\UpdateProductData;
 use App\Modules\Catalog\Models\Product;
 use App\Modules\Catalog\Queries\ListAdminProductsQuery;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 
 class ProductController extends ApiController
 {
+    private const string PRODUCT_IMAGE_DIRECTORY = 'products';
+
     public function __construct(
         private readonly ListAdminProductsQuery $listAdminProductsQuery,
         private readonly CreateProductAction $createProductAction,
@@ -40,7 +45,7 @@ class ProductController extends ApiController
 
             $product = $this->createProductAction->execute(new CreateProductData(
                 name: (string) $validated['name'],
-                urlImg: (string) $validated['url_img'],
+                urlImg: $this->storeProductImage($request->file('image')),
                 quantity: (int) $validated['quantity'],
                 price: (int) $validated['price'],
                 gameId: (int) $validated['game_id'],
@@ -71,7 +76,7 @@ class ProductController extends ApiController
 
             $updatedProduct = $this->updateProductAction->execute($product, new UpdateProductData(
                 name: (string) $validated['name'],
-                urlImg: (string) $validated['url_img'],
+                urlImg: $this->optionalStoredProductImageUrl($request->file('image')),
                 quantity: (int) $validated['quantity'],
                 price: (int) $validated['price'],
                 gameId: (int) $validated['game_id'],
@@ -115,5 +120,25 @@ class ProductController extends ApiController
                 'name' => $product->rarity->name,
             ],
         ];
+    }
+
+    private function optionalStoredProductImageUrl(mixed $image): ?string
+    {
+        if (!$image instanceof UploadedFile) {
+            return null;
+        }
+
+        return $this->storeProductImage($image);
+    }
+
+    private function storeProductImage(UploadedFile $image): string
+    {
+        $path = $image->store(self::PRODUCT_IMAGE_DIRECTORY, 'public');
+
+        if ($path === false) {
+            throw new RuntimeException(__('general.errors.product_image_storage_failed'));
+        }
+
+        return Storage::disk('public')->url($path);
     }
 }

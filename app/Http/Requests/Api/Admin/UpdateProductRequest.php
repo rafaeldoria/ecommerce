@@ -26,7 +26,7 @@ class UpdateProductRequest extends FormRequest
                 'max:255',
                 Rule::unique(Product::class, 'name')->ignore($productId)->withoutTrashed(),
             ],
-            'url_img' => ['required', 'string', 'max:255'],
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'quantity' => ['required', 'integer', 'min:0'],
             'price' => ['required', 'integer', 'min:0'],
             'game_id' => ['required', 'integer', Rule::exists(Game::class, 'id')->whereNull('deleted_at')],

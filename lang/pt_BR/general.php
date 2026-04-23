@@ -72,6 +72,7 @@ return [
         'invalid_order_email' => 'O email do pedido deve ser valido.',
         'invalid_order_whatsapp' => 'O numero de WhatsApp deve conter entre 10 e 15 digitos.',
         'payment_processing_deferred' => 'O processamento de pagamento esta intencionalmente adiado neste MVP.',
+        'product_image_storage_failed' => 'Nao foi possivel salvar a imagem do produto.',
     ],
     'notifications' => [
         'internal_order_created' => [
