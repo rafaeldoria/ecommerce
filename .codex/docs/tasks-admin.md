@@ -145,26 +145,26 @@ Expose admin-only read APIs for created orders and buyer contact data required f
 
 | ID | Task | Depends On | Status |
 | --- | --- | --- | --- |
-| A10 | Admin Identity Model And Persistence | T23, T31 | todo |
-| A11 | Admin API Authentication Baseline | A10 | todo |
-| A12 | Admin Authorization Boundary | A11 | todo |
+| A10 | Admin Identity Model And Persistence | T23, T31 | done |
+| A11 | Admin API Authentication Baseline | A10 | done |
+| A12 | Admin Authorization Boundary | A11 | done |
 
 ### Wave A2
 
 | ID | Task | Depends On | Status |
 | --- | --- | --- | --- |
-| A20 | Admin Games API | A12 | todo |
-| A21 | Admin Rarities API | A12 | todo |
-| A22 | Admin Products API | A12, A20, A21 | todo |
-| A23 | Admin Catalog API Hardening And Repository-Level Verification | A20, A21, A22 | todo |
+| A20 | Admin Games API | A12 | done |
+| A21 | Admin Rarities API | A12 | done |
+| A22 | Admin Products API | A12, A20, A21 | done |
+| A23 | Admin Catalog API Hardening And Repository-Level Verification | A20, A21, A22 | done |
 
 ### Wave A3
 
 | ID | Task | Depends On | Status |
 | --- | --- | --- | --- |
-| A30 | Admin Orders Read API | A12 | todo |
-| A31 | Admin Order Detail And Buyer Contact API | A30 | todo |
-| A32 | Admin Orders API Hardening And Repository-Level Verification | A30, A31 | todo |
+| A30 | Admin Orders Read API | A12 | done |
+| A31 | Admin Order Detail And Buyer Contact API | A30 | done |
+| A32 | Admin Orders API Hardening And Repository-Level Verification | A30, A31 | done |
 
 ---
 

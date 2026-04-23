@@ -5,6 +5,38 @@ return [
     'architecture' => 'Monolito modular por dominio com Actions como casos de uso.',
     'validation_baseline' => 'Cada funcionalidade significativa deve cobrir um caminho feliz e um caminho de falha ou regra de negocio.',
     'api' => [
+        'admin' => [
+            'auth' => [
+                'logged_in' => 'Admin autenticado com sucesso.',
+                'logged_out' => 'Admin desconectado com sucesso.',
+                'profile_retrieved' => 'Perfil do admin recuperado com sucesso.',
+            ],
+            'games' => [
+                'listed' => 'Jogos recuperados com sucesso.',
+                'created' => 'Jogo criado com sucesso.',
+                'retrieved' => 'Jogo recuperado com sucesso.',
+                'updated' => 'Jogo atualizado com sucesso.',
+                'deleted' => 'Jogo removido com sucesso.',
+            ],
+            'rarities' => [
+                'listed' => 'Raridades recuperadas com sucesso.',
+                'created' => 'Raridade criada com sucesso.',
+                'retrieved' => 'Raridade recuperada com sucesso.',
+                'updated' => 'Raridade atualizada com sucesso.',
+                'deleted' => 'Raridade removida com sucesso.',
+            ],
+            'products' => [
+                'listed' => 'Produtos recuperados com sucesso.',
+                'created' => 'Produto criado com sucesso.',
+                'retrieved' => 'Produto recuperado com sucesso.',
+                'updated' => 'Produto atualizado com sucesso.',
+                'deleted' => 'Produto removido com sucesso.',
+            ],
+            'orders' => [
+                'listed' => 'Pedidos recuperados com sucesso.',
+                'retrieved' => 'Pedido recuperado com sucesso.',
+            ],
+        ],
         'catalog' => [
             'products_listed' => 'Produtos do catalogo recuperados com sucesso.',
         ],
@@ -18,11 +50,17 @@ return [
             'created' => 'Pedido criado com sucesso.',
         ],
         'errors' => [
+            'forbidden' => 'Voce nao tem permissao para acessar este recurso.',
+            'unauthenticated' => 'Autenticacao e obrigatoria para acessar este recurso.',
             'resource_not_found' => 'O recurso solicitado nao foi encontrado.',
+            'validation_failed' => 'Os dados enviados sao invalidos.',
         ],
     ],
     'errors' => [
         'empty_cart' => 'O carrinho esta vazio.',
+        'game_in_use' => 'O jogo selecionado nao pode ser removido porque ainda existem produtos vinculados a ele.',
+        'rarity_in_use' => 'A raridade selecionada nao pode ser removida porque ainda existem produtos vinculados a ela.',
+        'invalid_admin_credentials' => 'As credenciais de admin sao invalidas.',
         'invalid_cart_quantity' => 'A quantidade do carrinho deve ser maior que zero.',
         'invalid_product_reference' => 'O produto selecionado nao existe.',
         'invalid_game_reference' => 'O jogo selecionado nao existe.',
@@ -34,6 +72,7 @@ return [
         'invalid_order_email' => 'O email do pedido deve ser valido.',
         'invalid_order_whatsapp' => 'O numero de WhatsApp deve conter entre 10 e 15 digitos.',
         'payment_processing_deferred' => 'O processamento de pagamento esta intencionalmente adiado neste MVP.',
+        'product_image_storage_failed' => 'Nao foi possivel salvar a imagem do produto.',
     ],
     'notifications' => [
         'internal_order_created' => [

@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Admin\Exceptions\InvalidAdminCredentials;
 use App\Modules\Cart\Exceptions\EmptyCart;
 use App\Modules\Cart\Exceptions\InvalidCartQuantity;
 use App\Modules\Cart\Exceptions\InvalidProductReference as CartInvalidProductReference;
+use App\Modules\Catalog\Exceptions\CatalogResourceInUse;
 use App\Modules\Catalog\Exceptions\InvalidProductData;
 use App\Modules\Catalog\Exceptions\InvalidProductReference as CatalogInvalidProductReference;
 use App\Modules\Orders\Exceptions\InsufficientStock;
@@ -32,6 +34,10 @@ abstract class ApiController extends Controller
             return $this->error($exception->getMessage(), 'insufficient_stock', 422);
         } catch (InvalidProductData $exception) {
             return $this->error($exception->getMessage(), 'invalid_product_data', 422);
+        } catch (CatalogResourceInUse $exception) {
+            return $this->error($exception->getMessage(), 'catalog_resource_in_use', 422);
+        } catch (InvalidAdminCredentials $exception) {
+            return $this->error($exception->getMessage(), 'invalid_admin_credentials', 422);
         } catch (ModelNotFoundException) {
             return $this->error(__('general.api.errors.resource_not_found'), 'resource_not_found', 404);
         } catch (Throwable $exception) {

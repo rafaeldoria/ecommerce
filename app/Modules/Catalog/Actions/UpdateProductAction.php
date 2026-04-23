@@ -23,14 +23,19 @@ class UpdateProductAction
         $this->guardData($data->price, $data->quantity);
         $this->guardReferences($data->gameId, $data->rarityId);
 
-        $product->fill([
+        $attributes = [
             'name' => $data->name,
-            'url_img' => $data->urlImg,
             'quantity' => $data->quantity,
             'price' => $data->price,
             'game_id' => $data->gameId,
             'rarity_id' => $data->rarityId,
-        ])->save();
+        ];
+
+        if ($data->urlImg !== null) {
+            $attributes['url_img'] = $data->urlImg;
+        }
+
+        $product->fill($attributes)->save();
 
         return $product->refresh();
     }
