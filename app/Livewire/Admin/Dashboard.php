@@ -26,7 +26,7 @@ class Dashboard extends Component
             'orders' => Order::query()->count(),
         ];
 
-        return view('livewire.admin.dashboard');
+        return $this->pageView('livewire.admin.dashboard');
     }
 
     protected function titleKey(): string

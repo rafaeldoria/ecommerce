@@ -8,8 +8,10 @@ use App\Modules\Catalog\Models\Game;
 use App\Modules\Catalog\Models\Product;
 use App\Modules\Catalog\Models\Rarity;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\Test;
+use ReflectionMethod;
 use Tests\TestCase;
 
 class FrontendFoundationTest extends TestCase
@@ -36,6 +38,7 @@ class FrontendFoundationTest extends TestCase
 
         $this->get(route('storefront.home'))
             ->assertOk()
+            ->assertSee('<title>GR-Shop</title>', false)
             ->assertSee(__('storefront.brand.name'))
             ->assertSee(__('storefront.home.title'))
             ->assertSee(__('storefront.navigation.cart'))
@@ -43,12 +46,14 @@ class FrontendFoundationTest extends TestCase
 
         $this->get(route('storefront.catalog'))
             ->assertOk()
+            ->assertSee('<title>Catalog | GR-Shop</title>', false)
             ->assertSee(__('storefront.catalog.title'))
             ->assertSee('Dota 2')
             ->assertSee('Phantom Assassin Arcana');
 
         $this->get(route('storefront.products.show', ['product' => $product]))
             ->assertOk()
+            ->assertSee('<title>Product | GR-Shop</title>', false)
             ->assertSee('Phantom Assassin Arcana')
             ->assertSee('Dota 2')
             ->assertSee('Arcana');
@@ -100,6 +105,7 @@ class FrontendFoundationTest extends TestCase
     {
         $this->get(route('admin.login'))
             ->assertOk()
+            ->assertSee('<title>Admin login</title>', false)
             ->assertSee(__('admin.auth.login_title'))
             ->assertDontSee(__('storefront.navigation.catalog'));
 
@@ -111,8 +117,25 @@ class FrontendFoundationTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.dashboard'))
             ->assertOk()
+            ->assertSee('<title>Admin dashboard</title>', false)
             ->assertSee(__('admin.dashboard.title'))
             ->assertSee(__('admin.navigation.products'));
+    }
+
+    #[Test]
+    public function sold_out_products_are_not_publicly_accessible_in_the_storefront(): void
+    {
+        $game = Game::factory()->create(['name' => 'Dota 2']);
+        $rarity = Rarity::factory()->create(['name' => 'Arcana']);
+        $soldOutProduct = Product::factory()->create([
+            'name' => 'Sold Out Arcana',
+            'game_id' => $game->id,
+            'rarity_id' => $rarity->id,
+            'quantity' => 0,
+        ]);
+
+        $this->get(route('storefront.products.show', ['product' => $soldOutProduct]))
+            ->assertNotFound();
     }
 
     #[Test]
@@ -177,5 +200,23 @@ class FrontendFoundationTest extends TestCase
             ->assertSee('Catalogo')
             ->assertSee('Troque de game instantaneamente')
             ->assertSee('Machado Arcano');
+    }
+
+    #[Test]
+    public function admin_login_throttle_key_includes_the_client_ip(): void
+    {
+        $component = app(Login::class);
+        $method = new ReflectionMethod(Login::class, 'rateLimitKey');
+        $method->setAccessible(true);
+
+        app()->instance('request', Request::create('/admin/login', 'POST', server: ['REMOTE_ADDR' => '10.0.0.1']));
+        $firstKey = $method->invoke($component, 'ops-admin');
+
+        app()->instance('request', Request::create('/admin/login', 'POST', server: ['REMOTE_ADDR' => '10.0.0.2']));
+        $secondKey = $method->invoke($component, 'ops-admin');
+
+        $this->assertSame('ops-admin|10.0.0.1', $firstKey);
+        $this->assertSame('ops-admin|10.0.0.2', $secondKey);
+        $this->assertNotSame($firstKey, $secondKey);
     }
 }

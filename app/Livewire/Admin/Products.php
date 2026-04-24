@@ -14,7 +14,7 @@ class Products extends Component
 
     public function render(ListAdminProductsQuery $listAdminProductsQuery)
     {
-        return view('livewire.admin.products', [
+        return $this->pageView('livewire.admin.products', [
             'products' => $listAdminProductsQuery->execute(),
         ]);
     }

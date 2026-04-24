@@ -13,7 +13,7 @@ class Checkout extends Component
 
     public function render()
     {
-        return view('livewire.storefront.checkout');
+        return $this->pageView('livewire.storefront.checkout');
     }
 
     protected function titleKey(): string

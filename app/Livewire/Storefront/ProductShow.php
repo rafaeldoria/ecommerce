@@ -4,6 +4,7 @@ namespace App\Livewire\Storefront;
 
 use App\Livewire\Concerns\UsesLocalizedPageTitle;
 use App\Modules\Catalog\Models\Product;
+use App\Modules\Catalog\Queries\GetAvailableStorefrontProductQuery;
 use Illuminate\Support\Number;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -17,15 +18,15 @@ class ProductShow extends Component
 
     public string $formattedPrice;
 
-    public function mount(Product $product): void
+    public function mount(Product $product, GetAvailableStorefrontProductQuery $getAvailableStorefrontProductQuery): void
     {
-        $this->product = $product;
-        $this->formattedPrice = Number::currency($product->price / 100, in: 'BRL', locale: app()->getLocale());
+        $this->product = $getAvailableStorefrontProductQuery->execute($product->getKey());
+        $this->formattedPrice = Number::currency($this->product->price / 100, in: 'BRL', locale: app()->getLocale());
     }
 
     public function render()
     {
-        return view('livewire.storefront.product-show');
+        return $this->pageView('livewire.storefront.product-show');
     }
 
     protected function titleKey(): string

@@ -22,7 +22,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', Home::class)->name('storefront.home');
 Route::get('/catalog', Catalog::class)->name('storefront.catalog');
-Route::get('/products/{product}', ProductShow::class)->name('storefront.products.show');
+Route::get('/products/{product}', ProductShow::class)
+    ->whereNumber('product')
+    ->name('storefront.products.show');
 Route::get('/cart', Cart::class)->name('storefront.cart');
 Route::get('/checkout', Checkout::class)->name('storefront.checkout');
 Route::get('/about', About::class)->name('storefront.about');

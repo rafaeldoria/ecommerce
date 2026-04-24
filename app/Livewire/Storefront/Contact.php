@@ -13,7 +13,7 @@ class Contact extends Component
 
     public function render()
     {
-        return view('livewire.storefront.contact');
+        return $this->pageView('livewire.storefront.contact');
     }
 
     protected function titleKey(): string

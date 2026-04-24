@@ -13,7 +13,7 @@ class About extends Component
 
     public function render()
     {
-        return view('livewire.storefront.about');
+        return $this->pageView('livewire.storefront.about');
     }
 
     protected function titleKey(): string

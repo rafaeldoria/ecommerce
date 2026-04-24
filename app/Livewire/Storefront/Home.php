@@ -46,7 +46,7 @@ class Home extends Component
                 'route' => route('storefront.products.show', ['product' => $product]),
             ])->values()->all();
 
-        return view('livewire.storefront.home', [
+        return $this->pageView('livewire.storefront.home', [
             'games' => $games,
             'featuredProducts' => $featuredProducts,
         ]);

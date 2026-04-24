@@ -30,7 +30,7 @@ class Show extends Component
             static fn ($item): int => $item->unit_price * $item->quantity
         );
 
-        return view('livewire.admin.orders.show', [
+        return $this->pageView('livewire.admin.orders.show', [
             'formattedTotalAmount' => Number::currency($totalAmount / 100, in: 'BRL', locale: app()->getLocale()),
         ]);
     }

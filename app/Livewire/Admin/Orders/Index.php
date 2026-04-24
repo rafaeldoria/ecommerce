@@ -14,7 +14,7 @@ class Index extends Component
 
     public function render(ListAdminOrdersQuery $listAdminOrdersQuery)
     {
-        return view('livewire.admin.orders.index', [
+        return $this->pageView('livewire.admin.orders.index', [
             'orders' => $listAdminOrdersQuery->execute(),
         ]);
     }

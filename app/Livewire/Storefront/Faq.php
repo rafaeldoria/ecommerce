@@ -13,7 +13,7 @@ class Faq extends Component
 
     public function render()
     {
-        return view('livewire.storefront.faq');
+        return $this->pageView('livewire.storefront.faq');
     }
 
     protected function titleKey(): string

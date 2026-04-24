@@ -13,7 +13,7 @@ class Cart extends Component
 
     public function render()
     {
-        return view('livewire.storefront.cart');
+        return $this->pageView('livewire.storefront.cart');
     }
 
     protected function titleKey(): string

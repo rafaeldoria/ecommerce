@@ -14,7 +14,7 @@ class Rarities extends Component
 
     public function render(ListAdminRaritiesQuery $listAdminRaritiesQuery)
     {
-        return view('livewire.admin.rarities', [
+        return $this->pageView('livewire.admin.rarities', [
             'rarities' => $listAdminRaritiesQuery->execute(),
         ]);
     }

@@ -14,7 +14,7 @@ class Games extends Component
 
     public function render(ListAdminGamesQuery $listAdminGamesQuery)
     {
-        return view('livewire.admin.games', [
+        return $this->pageView('livewire.admin.games', [
             'games' => $listAdminGamesQuery->execute(),
         ]);
     }

@@ -75,7 +75,7 @@ class Login extends Component
 
     public function render()
     {
-        return view('livewire.admin.login');
+        return $this->pageView('livewire.admin.login');
     }
 
     protected function titleKey(): string
@@ -86,11 +86,12 @@ class Login extends Component
     private function rateLimitKey(string $login): string
     {
         $normalized = Str::lower(trim($login));
+        $ipAddress = (string) request()->ip();
 
         if ($normalized === '') {
-            return (string) request()->ip();
+            return $ipAddress;
         }
 
-        return $normalized;
+        return sprintf('%s|%s', $normalized, $ipAddress);
     }
 }

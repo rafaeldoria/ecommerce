@@ -83,7 +83,7 @@ class Catalog extends Component
 
     public function render()
     {
-        return view('livewire.storefront.catalog');
+        return $this->pageView('livewire.storefront.catalog');
     }
 
     protected function titleKey(): string
