@@ -21,6 +21,7 @@
 /vendor
 .codex/docs/waves/pt-BR/**
 .codex/docs/pt-BR/**
+.codex/docs/collection/**
 _ide_helper.php
 Homestead.json
 Homestead.yaml
