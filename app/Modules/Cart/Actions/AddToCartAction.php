@@ -5,27 +5,20 @@ namespace App\Modules\Cart\Actions;
 use App\Modules\Cart\Contracts\CartStore;
 use App\Modules\Cart\DTOs\AddToCartData;
 use App\Modules\Cart\Exceptions\InvalidCartQuantity;
-use App\Modules\Cart\Exceptions\InvalidProductReference;
-use App\Modules\Catalog\Models\Product;
+use App\Modules\Cart\Queries\FindCartProductQuery;
 
 class AddToCartAction
 {
     public function __construct(
         private readonly CartStore $cartStore,
+        private readonly FindCartProductQuery $findCartProductQuery,
     ) {}
 
     public function execute(AddToCartData $data): array
     {
         $this->guardQuantity($data->quantity);
 
-        $product = Product::query()
-            ->whereKey($data->productId)
-            ->whereNull('deleted_at')
-            ->first();
-
-        if ($product === null) {
-            throw new InvalidProductReference(__('general.errors.invalid_product_reference'));
-        }
+        $product = $this->findCartProductQuery->execute($data->productId);
 
         $items = $this->cartStore->all();
         $existingIndex = $this->findItemIndex($items, $product->getKey());

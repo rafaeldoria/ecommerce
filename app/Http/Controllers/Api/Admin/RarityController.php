@@ -23,55 +23,49 @@ class RarityController extends ApiController
 
     public function index(): JsonResponse
     {
-        return $this->respond(fn () => response()->json([
+        return response()->json([
             'message' => __('general.api.admin.rarities.listed'),
             'data' => $this->listAdminRaritiesQuery->execute()->map(
                 fn (Rarity $rarity): array => $this->payload($rarity)
             )->all(),
-        ]));
+        ]);
     }
 
     public function store(StoreRarityRequest $request): JsonResponse
     {
-        return $this->respond(function () use ($request): JsonResponse {
-            $rarity = $this->createRarityAction->execute((string) $request->validated('name'));
+        $rarity = $this->createRarityAction->execute((string) $request->validated('name'));
 
-            return response()->json([
-                'message' => __('general.api.admin.rarities.created'),
-                'data' => $this->payload($rarity),
-            ], 201);
-        });
+        return response()->json([
+            'message' => __('general.api.admin.rarities.created'),
+            'data' => $this->payload($rarity),
+        ], 201);
     }
 
     public function show(Rarity $rarity): JsonResponse
     {
-        return $this->respond(fn () => response()->json([
+        return response()->json([
             'message' => __('general.api.admin.rarities.retrieved'),
             'data' => $this->payload($rarity),
-        ]));
+        ]);
     }
 
     public function update(UpdateRarityRequest $request, int $rarity): JsonResponse
     {
-        return $this->respond(function () use ($request, $rarity): JsonResponse {
-            $updatedRarity = $this->updateRarityAction->execute($rarity, (string) $request->validated('name'));
+        $updatedRarity = $this->updateRarityAction->execute($rarity, (string) $request->validated('name'));
 
-            return response()->json([
-                'message' => __('general.api.admin.rarities.updated'),
-                'data' => $this->payload($updatedRarity),
-            ]);
-        });
+        return response()->json([
+            'message' => __('general.api.admin.rarities.updated'),
+            'data' => $this->payload($updatedRarity),
+        ]);
     }
 
     public function destroy(int $rarity): JsonResponse
     {
-        return $this->respond(function () use ($rarity): JsonResponse {
-            $this->deleteRarityAction->execute($rarity);
+        $this->deleteRarityAction->execute($rarity);
 
-            return response()->json([
-                'message' => __('general.api.admin.rarities.deleted'),
-            ]);
-        });
+        return response()->json([
+            'message' => __('general.api.admin.rarities.deleted'),
+        ]);
     }
 
     private function payload(Rarity $rarity): array

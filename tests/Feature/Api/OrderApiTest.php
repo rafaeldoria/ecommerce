@@ -45,12 +45,16 @@ class OrderApiTest extends TestCase
     #[Test]
     public function it_returns_a_domain_error_when_creating_an_order_from_an_empty_cart(): void
     {
-        $this->postJson('/api/orders', [
+        $response = $this->postJson('/api/orders', [
             'email' => 'buyer@example.com',
             'whatsapp' => '+55 11 98888-7777',
-        ])
-            ->assertUnprocessable()
-            ->assertJsonPath('error', 'empty_cart')
-            ->assertJsonPath('message', __('general.errors.empty_cart'));
+        ]);
+
+        $this->assertProblemDetails(
+            $response,
+            'empty_cart',
+            422,
+            __('general.errors.empty_cart'),
+        );
     }
 }

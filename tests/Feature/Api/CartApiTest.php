@@ -60,12 +60,16 @@ class CartApiTest extends TestCase
     #[Test]
     public function it_returns_domain_errors_for_invalid_cart_mutation(): void
     {
-        $this->postJson('/api/cart/items', [
+        $response = $this->postJson('/api/cart/items', [
             'product_id' => 999,
             'quantity' => 1,
-        ])
-            ->assertNotFound()
-            ->assertJsonPath('error', 'invalid_product_reference')
-            ->assertJsonPath('message', __('general.errors.invalid_product_reference'));
+        ]);
+
+        $this->assertProblemDetails(
+            $response,
+            'invalid_product_reference',
+            404,
+            __('general.errors.invalid_product_reference'),
+        );
     }
 }
