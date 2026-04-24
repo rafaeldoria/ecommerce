@@ -3,6 +3,9 @@
 namespace App\Livewire\Admin\Orders;
 
 use App\Livewire\Concerns\UsesLocalizedPageTitle;
+use App\Modules\Orders\Models\Order;
+use App\Modules\Orders\Queries\GetAdminOrderQuery;
+use Illuminate\Support\Number;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -13,14 +16,23 @@ class Show extends Component
 
     public int $order;
 
-    public function mount(int $order): void
+    public Order $foundOrder;
+
+    public function mount(int $order, GetAdminOrderQuery $getAdminOrderQuery): void
     {
         $this->order = $order;
+        $this->foundOrder = $getAdminOrderQuery->execute($order);
     }
 
     public function render()
     {
-        return view('livewire.admin.orders.show');
+        $totalAmount = $this->foundOrder->items->sum(
+            static fn ($item): int => $item->unit_price * $item->quantity
+        );
+
+        return view('livewire.admin.orders.show', [
+            'formattedTotalAmount' => Number::currency($totalAmount / 100, in: 'BRL', locale: app()->getLocale()),
+        ]);
     }
 
     protected function titleKey(): string

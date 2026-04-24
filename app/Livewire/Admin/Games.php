@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use App\Livewire\Concerns\UsesLocalizedPageTitle;
+use App\Modules\Catalog\Queries\ListAdminGamesQuery;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -11,9 +12,11 @@ class Games extends Component
 {
     use UsesLocalizedPageTitle;
 
-    public function render()
+    public function render(ListAdminGamesQuery $listAdminGamesQuery)
     {
-        return view('livewire.admin.games');
+        return view('livewire.admin.games', [
+            'games' => $listAdminGamesQuery->execute(),
+        ]);
     }
 
     protected function titleKey(): string

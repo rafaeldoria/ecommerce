@@ -15,6 +15,9 @@ use App\Livewire\Storefront\Contact;
 use App\Livewire\Storefront\Faq;
 use App\Livewire\Storefront\Home;
 use App\Livewire\Storefront\ProductShow;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', Home::class)->name('storefront.home');
@@ -38,5 +41,13 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::get('/orders/{order}', AdminOrdersShow::class)
             ->whereNumber('order')
             ->name('orders.show');
+
+        Route::post('/logout', function (Request $request): RedirectResponse {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('admin.login');
+        })->name('logout');
     });
 });

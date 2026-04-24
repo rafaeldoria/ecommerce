@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Orders;
 
 use App\Livewire\Concerns\UsesLocalizedPageTitle;
+use App\Modules\Orders\Queries\ListAdminOrdersQuery;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -11,9 +12,11 @@ class Index extends Component
 {
     use UsesLocalizedPageTitle;
 
-    public function render()
+    public function render(ListAdminOrdersQuery $listAdminOrdersQuery)
     {
-        return view('livewire.admin.orders.index');
+        return view('livewire.admin.orders.index', [
+            'orders' => $listAdminOrdersQuery->execute(),
+        ]);
     }
 
     protected function titleKey(): string

@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use App\Livewire\Concerns\UsesLocalizedPageTitle;
+use App\Modules\Catalog\Queries\ListAdminRaritiesQuery;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -11,9 +12,11 @@ class Rarities extends Component
 {
     use UsesLocalizedPageTitle;
 
-    public function render()
+    public function render(ListAdminRaritiesQuery $listAdminRaritiesQuery)
     {
-        return view('livewire.admin.rarities');
+        return view('livewire.admin.rarities', [
+            'rarities' => $listAdminRaritiesQuery->execute(),
+        ]);
     }
 
     protected function titleKey(): string

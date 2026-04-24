@@ -3,6 +3,8 @@
 namespace App\Livewire\Storefront;
 
 use App\Livewire\Concerns\UsesLocalizedPageTitle;
+use App\Modules\Catalog\Models\Product;
+use Illuminate\Support\Number;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -11,11 +13,14 @@ class ProductShow extends Component
 {
     use UsesLocalizedPageTitle;
 
-    public string $product;
+    public Product $product;
 
-    public function mount(string $product): void
+    public string $formattedPrice;
+
+    public function mount(Product $product): void
     {
         $this->product = $product;
+        $this->formattedPrice = Number::currency($product->price / 100, in: 'BRL', locale: app()->getLocale());
     }
 
     public function render()
