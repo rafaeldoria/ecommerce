@@ -1,0 +1,120 @@
+<?php
+
+return [
+    'brand' => [
+        'name' => 'GR-Shop',
+        'tagline' => 'Itens premium para Dota 2 e CS2',
+    ],
+    'navigation' => [
+        'primary' => 'Navegacao principal da loja',
+        'home' => 'Inicio',
+        'catalog' => 'Catalogo',
+        'about' => 'Sobre',
+        'contact' => 'Contato',
+        'faq' => 'Ajuda',
+        'cart' => 'Carrinho',
+    ],
+    'home' => [
+        'eyebrow' => 'Loja de itens de jogos',
+        'title' => 'Uma loja focada em itens de Dota 2 e Counter-Strike que parece viva logo na primeira tela.',
+        'summary' => 'Esta primeira implementacao tira a storefront do placeholder e leva para uma experiencia visivel, guiada por game, com secoes de confianca melhores e navegacao mais clara.',
+        'primary_cta' => 'Explorar catalogo',
+        'secondary_cta' => 'Falar com suporte',
+        'metric_games_label' => 'Games ativos',
+        'metric_games_text' => 'Troque entre grupos de inventario ao vivo sem sair do fluxo da loja.',
+        'metric_inventory_label' => 'Itens visiveis',
+        'metric_inventory_text' => 'A primeira parte do frontend agora esta centrada em mostrar inventario com velocidade.',
+        'games_eyebrow' => 'Escolha seu game',
+        'games_title' => 'Navegue por game antes de entrar no detalhe do produto',
+        'games_link' => 'Abrir catalogo completo',
+        'games_card_text' => ':count item(ns) disponiveis agora',
+        'featured_eyebrow' => 'Inventario visivel',
+        'featured_title' => 'Itens em destaque do catalogo ao vivo',
+        'featured_link' => 'Ver todos os produtos',
+        'no_featured_products' => 'Gere ou crie produtos para transformar esta area em uma vitrine mais forte.',
+    ],
+    'catalog' => [
+        'eyebrow' => 'Troque de game instantaneamente',
+        'title' => 'Catalogo',
+        'summary' => 'Navegue pelo inventario visivel por game e veja os itens que realmente estao disponiveis agora.',
+        'products_found_label' => 'Itens visiveis',
+        'stock_label' => ':count disponiveis',
+        'price_label' => 'Preco',
+        'view_product' => 'Ver produto',
+        'no_games' => 'Nenhum game disponivel ainda.',
+        'empty_title' => 'Ainda nao ha itens disponiveis para este game.',
+        'empty_description' => 'A loja continua pronta para revisao visual mesmo quando um game nao tem produtos ativos. Adicione ou gere mais itens para manter o catalogo preenchido.',
+    ],
+    'product' => [
+        'title' => 'Detalhe do produto',
+        'price_label' => 'Preco atual',
+        'stock_label' => 'Estoque',
+        'stock_value' => ':count unidade(s) prontas para checkout',
+        'fulfillment_label' => 'Fluxo',
+        'fulfillment_value' => 'Acompanhamento manual da equipe apos o checkout',
+        'summary' => 'Esta pagina deixa a decisao de compra clara: qual e o item, a que game ele pertence, qual e a raridade e o que acontece depois do envio do pedido.',
+        'go_to_cart' => 'Ir para o carrinho',
+        'back_to_catalog' => 'Voltar ao catalogo',
+    ],
+    'cart' => [
+        'title' => 'Carrinho',
+        'foundation_note' => 'A UI do carrinho continuara alinhada ao carrinho de sessao controlado pelo servidor.',
+    ],
+    'checkout' => [
+        'title' => 'Checkout',
+        'foundation_note' => 'O checkout coletara apenas email e WhatsApp para o handoff do MVP.',
+    ],
+    'content' => [
+        'about_title' => 'Sobre a GR-Shop',
+        'contact_title' => 'Contato',
+        'faq_title' => 'Ajuda para compra',
+        'foundation_note' => 'O conteudo de apoio sera refinado na wave de conteudo.',
+    ],
+    'footer' => [
+        'about_title' => 'Sobre nos',
+        'about_text' => 'A GR-Shop e uma loja com base escura focada em itens de jogos e em um fluxo de compra humano e claro. Esta primeira parte do frontend prioriza inventario visivel, sinais de confianca e navegacao limpa.',
+        'quick_links_title' => 'Links rapidos',
+        'support_title' => 'Atendimento',
+        'contact_title' => 'Contato',
+        'social_title' => 'Redes sociais',
+        'social_links' => ['Facebook', 'Instagram', 'WhatsApp'],
+        'privacy' => 'Politica de privacidade',
+        'terms' => 'Termos de uso',
+        'phone' => '+55 (11) 99999-2026',
+        'whatsapp' => 'WhatsApp: +55 (11) 99999-2026',
+        'email' => 'admin@gr-shop.test',
+        'location' => 'Sao Paulo, SP - Brasil',
+        'support_note' => 'Fulfillment manual e suporte continuam claros durante o fluxo de compra.',
+        'copyright' => '© 2026 GR-Shop. Loja demo para validacao do frontend.',
+    ],
+    'metadata' => [
+        'default' => [
+            'title' => 'GR-Shop',
+            'description' => 'Uma loja de itens de jogos com suporte para fulfillment manual.',
+        ],
+        'home' => [
+            'title' => 'GR-Shop',
+        ],
+        'catalog' => [
+            'title' => 'Catalogo | GR-Shop',
+        ],
+        'product' => [
+            'title' => 'Produto | GR-Shop',
+        ],
+        'cart' => [
+            'title' => 'Carrinho | GR-Shop',
+        ],
+        'checkout' => [
+            'title' => 'Checkout | GR-Shop',
+        ],
+        'about' => [
+            'title' => 'Sobre | GR-Shop',
+        ],
+        'contact' => [
+            'title' => 'Contato | GR-Shop',
+        ],
+        'faq' => [
+            'title' => 'Ajuda para compra | GR-Shop',
+        ],
+    ],
+];

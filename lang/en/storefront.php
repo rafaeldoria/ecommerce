@@ -1,0 +1,120 @@
+<?php
+
+return [
+    'brand' => [
+        'name' => 'GR-Shop',
+        'tagline' => 'Premium items for Dota 2 and CS2',
+    ],
+    'navigation' => [
+        'primary' => 'Primary storefront navigation',
+        'home' => 'Home',
+        'catalog' => 'Catalog',
+        'about' => 'About',
+        'contact' => 'Contact',
+        'faq' => 'FAQ',
+        'cart' => 'Cart',
+    ],
+    'home' => [
+        'eyebrow' => 'Game items storefront',
+        'title' => 'A focused storefront for Dota 2 and Counter-Strike items that feels alive from the first screen.',
+        'summary' => 'This first implementation pass moves the storefront away from placeholders and into a visible, game-driven catalog experience with stronger trust sections and clearer navigation.',
+        'primary_cta' => 'Explore catalog',
+        'secondary_cta' => 'Talk to support',
+        'metric_games_label' => 'Games live',
+        'metric_games_text' => 'Switch between live inventory groups without leaving the storefront flow.',
+        'metric_inventory_label' => 'Visible items',
+        'metric_inventory_text' => 'The first part of the frontend is now centered on showing inventory fast.',
+        'games_eyebrow' => 'Choose your game',
+        'games_title' => 'Browse by game before you dive into product detail',
+        'games_link' => 'Open full catalog',
+        'games_card_text' => ':count item(s) available right now',
+        'featured_eyebrow' => 'Visible inventory',
+        'featured_title' => 'Featured items from the live catalog',
+        'featured_link' => 'See all products',
+        'no_featured_products' => 'Seed or create products to turn this area into a stronger storefront showcase.',
+    ],
+    'catalog' => [
+        'eyebrow' => 'Switch games instantly',
+        'title' => 'Catalog',
+        'summary' => 'Browse live inventory by game and see the items that are actually available right now.',
+        'products_found_label' => 'Visible items',
+        'stock_label' => ':count available',
+        'price_label' => 'Price',
+        'view_product' => 'View product',
+        'no_games' => 'No games available yet.',
+        'empty_title' => 'No items available for this game yet.',
+        'empty_description' => 'This storefront is ready for a visual review even when one game has no active products. Add or seed more items to keep the catalog populated.',
+    ],
+    'product' => [
+        'title' => 'Product detail',
+        'price_label' => 'Current price',
+        'stock_label' => 'Stock',
+        'stock_value' => ':count unit(s) ready for checkout',
+        'fulfillment_label' => 'Fulfillment',
+        'fulfillment_value' => 'Manual team follow-up after checkout',
+        'summary' => 'This page keeps the purchase decision clear: what the item is, which game it belongs to, how rare it is, and what happens after the buyer submits the order.',
+        'go_to_cart' => 'Go to cart',
+        'back_to_catalog' => 'Back to catalog',
+    ],
+    'cart' => [
+        'title' => 'Cart',
+        'foundation_note' => 'Cart UI will stay aligned with the server-owned session cart.',
+    ],
+    'checkout' => [
+        'title' => 'Checkout',
+        'foundation_note' => 'Checkout will collect only email and WhatsApp for the MVP handoff.',
+    ],
+    'content' => [
+        'about_title' => 'About GR-Shop',
+        'contact_title' => 'Contact',
+        'faq_title' => 'Purchase help',
+        'foundation_note' => 'Supporting content will be refined in the content wave.',
+    ],
+    'footer' => [
+        'about_title' => 'About us',
+        'about_text' => 'GR-Shop is a dark-first storefront focused on game items with a clear and human purchase flow. This first part of the frontend prioritizes visible inventory, trust signals, and clean navigation.',
+        'quick_links_title' => 'Quick links',
+        'support_title' => 'Support',
+        'contact_title' => 'Contact',
+        'social_title' => 'Social',
+        'social_links' => ['Facebook', 'Instagram', 'WhatsApp'],
+        'privacy' => 'Privacy policy',
+        'terms' => 'Terms of use',
+        'phone' => '+55 (11) 99999-2026',
+        'whatsapp' => 'WhatsApp: +55 (11) 99999-2026',
+        'email' => 'admin@gr-shop.test',
+        'location' => 'Sao Paulo, SP - Brazil',
+        'support_note' => 'Manual fulfillment and support remain clear throughout the purchase flow.',
+        'copyright' => '© 2026 GR-Shop. Demo storefront for frontend validation.',
+    ],
+    'metadata' => [
+        'default' => [
+            'title' => 'GR-Shop',
+            'description' => 'A game items storefront with manual fulfillment support.',
+        ],
+        'home' => [
+            'title' => 'GR-Shop',
+        ],
+        'catalog' => [
+            'title' => 'Catalog | GR-Shop',
+        ],
+        'product' => [
+            'title' => 'Product | GR-Shop',
+        ],
+        'cart' => [
+            'title' => 'Cart | GR-Shop',
+        ],
+        'checkout' => [
+            'title' => 'Checkout | GR-Shop',
+        ],
+        'about' => [
+            'title' => 'About | GR-Shop',
+        ],
+        'contact' => [
+            'title' => 'Contact | GR-Shop',
+        ],
+        'faq' => [
+            'title' => 'Purchase help | GR-Shop',
+        ],
+    ],
+];
