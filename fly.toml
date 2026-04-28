@@ -1,0 +1,46 @@
+app = "ecommerce-gkycsq"
+primary_region = "gru"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  APP_ENV = "production"
+  APP_DEBUG = "false"
+  APP_URL = "https://ecommerce-gkycsq.fly.dev"
+  DB_CONNECTION = "pgsql"
+  LOG_CHANNEL = "stderr"
+  LOG_LEVEL = "info"
+  SESSION_DRIVER = "database"
+  SESSION_SECURE_COOKIE = "true"
+  CACHE_STORE = "database"
+  QUEUE_CONNECTION = "sync"
+  FILESYSTEM_DISK = "local"
+
+[deploy]
+  release_command = "php artisan migrate --force"
+
+[[services]]
+  protocol = "tcp"
+  internal_port = 8080
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+    force_https = true
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+  [[services.http_checks]]
+    interval = "15s"
+    timeout = "2s"
+    grace_period = "20s"
+    method = "GET"
+    path = "/up"
+
+[[vm]]
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1

@@ -1,0 +1,17 @@
+.git
+.github
+.codex
+.env
+.env.*
+.phpunit.result.cache
+node_modules
+vendor
+public/build
+public/hot
+public/storage
+storage/app/private
+storage/app/public
+storage/framework
+storage/logs/*.log
+storage/pail
+tests
