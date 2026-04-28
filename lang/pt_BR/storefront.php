@@ -13,6 +13,10 @@ return [
         'contact' => 'Contato',
         'faq' => 'Ajuda',
         'cart' => 'Carrinho',
+        'cart_aria' => 'Carrinho com :count item(ns)',
+        'language' => 'Seletor de idioma',
+        'language_en' => 'Trocar idioma para ingles',
+        'language_pt_br' => 'Trocar idioma para portugues do Brasil',
     ],
     'home' => [
         'eyebrow' => 'Loja de itens de jogos',
@@ -38,6 +42,7 @@ return [
         'title' => 'Catalogo',
         'summary' => 'Navegue pelo inventario visivel por game e veja os itens que realmente estao disponiveis agora.',
         'products_found_label' => 'Itens visiveis',
+        'page_count_label' => 'Mostrando :from-:to nesta pagina',
         'stock_label' => ':count disponiveis',
         'price_label' => 'Preco',
         'view_product' => 'Ver produto',
@@ -59,6 +64,19 @@ return [
     'cart' => [
         'title' => 'Carrinho',
         'foundation_note' => 'A UI do carrinho continuara alinhada ao carrinho de sessao controlado pelo servidor.',
+        'messages' => [
+            'added' => 'Item adicionado ao carrinho.',
+            'product_unavailable' => 'Esse item nao esta mais disponivel. Escolha outro produto no catalogo.',
+        ],
+        'empty_title' => 'Seu carrinho esta vazio.',
+        'empty_description' => 'Navegue pelo catalogo e adicione um item disponivel antes de iniciar o checkout.',
+        'continue_shopping' => 'Continuar comprando',
+        'checkout' => 'Continuar para checkout',
+        'quantity_label' => 'Quantidade',
+        'unit_price' => 'Preco unitario: :price',
+        'subtotal' => 'Subtotal: :price',
+        'total_label' => 'Total do carrinho',
+        'checkout_note' => 'O checkout mantem o handoff do MVP simples: apenas email e WhatsApp.',
     ],
     'checkout' => [
         'title' => 'Checkout',

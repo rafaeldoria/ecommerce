@@ -5,7 +5,7 @@ namespace App\Livewire\Admin\Orders;
 use App\Livewire\Concerns\UsesLocalizedPageTitle;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Queries\GetAdminOrderQuery;
-use Illuminate\Support\Number;
+use App\Support\MoneyFormatter;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -31,7 +31,7 @@ class Show extends Component
         );
 
         return $this->pageView('livewire.admin.orders.show', [
-            'formattedTotalAmount' => Number::currency($totalAmount / 100, in: 'BRL', locale: app()->getLocale()),
+            'formattedTotalAmount' => MoneyFormatter::brlFromCents($totalAmount),
         ]);
     }
 

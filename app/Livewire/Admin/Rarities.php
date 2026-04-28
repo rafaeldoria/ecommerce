@@ -5,22 +5,21 @@ namespace App\Livewire\Admin;
 use App\Livewire\Concerns\UsesLocalizedPageTitle;
 use App\Modules\Catalog\Actions\CreateRarityAction;
 use App\Modules\Catalog\Actions\DeleteRarityAction;
-use App\Modules\Catalog\Actions\UpdateRarityAction;
 use App\Modules\Catalog\Exceptions\CatalogResourceInUse;
 use App\Modules\Catalog\Models\Rarity;
 use App\Modules\Catalog\Queries\ListAdminRaritiesQuery;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Layout('components.layouts.admin')]
 class Rarities extends Component
 {
     use UsesLocalizedPageTitle;
+    use WithPagination;
 
     public string $name = '';
-
-    public ?int $editingRarityId = null;
 
     public ?int $confirmingDeleteRarityId = null;
 
@@ -33,7 +32,7 @@ class Rarities extends Component
     public function render(ListAdminRaritiesQuery $listAdminRaritiesQuery)
     {
         return $this->pageView('livewire.admin.rarities', [
-            'rarities' => $listAdminRaritiesQuery->execute(),
+            'rarities' => $listAdminRaritiesQuery->executePaginated(10),
         ]);
     }
 
@@ -41,15 +40,11 @@ class Rarities extends Component
     {
         $validated = $this->validate($this->rules());
 
-        if ($this->editingRarityId === null) {
-            app(CreateRarityAction::class)->execute((string) $validated['name']);
-            $this->flashStatus(__('admin.rarities.messages.created'));
-        } else {
-            app(UpdateRarityAction::class)->execute($this->editingRarityId, (string) $validated['name']);
-            $this->flashStatus(__('admin.rarities.messages.updated'));
-        }
+        app(CreateRarityAction::class)->execute((string) $validated['name']);
+        $this->flashStatus(__('admin.rarities.messages.created'));
 
         $this->resetForm();
+        $this->resetPage();
     }
 
     public function beginCreate(): void
@@ -57,18 +52,6 @@ class Rarities extends Component
         $this->resetForm();
         $this->clearStatus();
         $this->isFormOpen = true;
-    }
-
-    public function edit(int $rarityId): void
-    {
-        $rarity = Rarity::query()->findOrFail($rarityId);
-
-        $this->editingRarityId = $rarity->getKey();
-        $this->confirmingDeleteRarityId = null;
-        $this->isFormOpen = true;
-        $this->name = $rarity->name;
-        $this->resetValidation();
-        $this->clearStatus();
     }
 
     public function confirmDelete(int $rarityId): void
@@ -87,6 +70,7 @@ class Rarities extends Component
             app(DeleteRarityAction::class)->execute($this->confirmingDeleteRarityId);
             $this->flashStatus(__('admin.rarities.messages.deleted'));
             $this->resetForm();
+            $this->resetPage();
         } catch (CatalogResourceInUse $exception) {
             $this->flashStatus($exception->getMessage(), 'danger');
         } finally {
@@ -115,14 +99,14 @@ class Rarities extends Component
                 'required',
                 'string',
                 'max:255',
-                Rule::unique(Rarity::class, 'name')->ignore($this->editingRarityId),
+                Rule::unique(Rarity::class, 'name'),
             ],
         ];
     }
 
     private function resetForm(): void
     {
-        $this->reset('name', 'editingRarityId', 'confirmingDeleteRarityId', 'isFormOpen');
+        $this->reset('name', 'confirmingDeleteRarityId', 'isFormOpen');
         $this->resetValidation();
     }
 

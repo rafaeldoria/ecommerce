@@ -3,9 +3,12 @@
 namespace App\Livewire\Storefront;
 
 use App\Livewire\Concerns\UsesLocalizedPageTitle;
+use App\Modules\Cart\Actions\AddToCartAction;
+use App\Modules\Cart\DTOs\AddToCartData;
+use App\Modules\Cart\Exceptions\InvalidProductReference;
 use App\Modules\Catalog\Models\Product;
 use App\Modules\Catalog\Queries\GetAvailableStorefrontProductQuery;
-use Illuminate\Support\Number;
+use App\Support\MoneyFormatter;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -21,7 +24,25 @@ class ProductShow extends Component
     public function mount(Product $product, GetAvailableStorefrontProductQuery $getAvailableStorefrontProductQuery): void
     {
         $this->product = $getAvailableStorefrontProductQuery->execute($product->getKey());
-        $this->formattedPrice = Number::currency($this->product->price / 100, in: 'BRL', locale: app()->getLocale());
+        $this->formattedPrice = MoneyFormatter::brlFromCents($this->product->price);
+    }
+
+    public function addToCart(AddToCartAction $addToCartAction)
+    {
+        try {
+            $addToCartAction->execute(new AddToCartData(
+                productId: $this->product->getKey(),
+                quantity: 1,
+            ));
+        } catch (InvalidProductReference $exception) {
+            session()->flash('cart.status', __('storefront.cart.messages.product_unavailable'));
+
+            return $this->redirectRoute('storefront.catalog');
+        }
+
+        session()->flash('cart.status', __('storefront.cart.messages.added'));
+
+        return $this->redirectRoute('storefront.cart');
     }
 
     public function render()

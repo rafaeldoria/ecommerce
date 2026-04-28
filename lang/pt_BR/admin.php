@@ -125,6 +125,7 @@ return [
         'cancel_delete' => 'Cancelar remocao',
         'create' => 'Criar',
         'update' => 'Atualizar',
+        'back_to_index' => 'Voltar para lista',
         'saving' => 'Salvando...',
         'deleting' => 'Removendo...',
     ],

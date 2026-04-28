@@ -24,6 +24,8 @@
                         </span>
                     </a>
 
+                    @php($cartQuantity = collect(app(\App\Modules\Cart\Actions\GetCurrentCartAction::class)->execute())->sum('quantity'))
+
                     <div class="flex flex-wrap items-center gap-3 text-sm text-slate-300">
                         <a class="rounded-full px-3 py-2 transition hover:bg-white/5 hover:text-white" href="{{ route('storefront.home') }}">
                             {{ __('storefront.navigation.home') }}
@@ -31,9 +33,28 @@
                         <a class="rounded-full px-3 py-2 transition hover:bg-white/5 hover:text-white" href="{{ route('storefront.catalog') }}">
                             {{ __('storefront.navigation.catalog') }}
                         </a>
-                        <a class="inline-flex items-center rounded-full border border-teal-400/40 bg-teal-400/10 px-4 py-2 font-medium text-teal-100 transition hover:border-teal-300 hover:bg-teal-400/20" href="{{ route('storefront.cart') }}">
+                        <a class="inline-flex items-center gap-2 rounded-full border border-teal-400/40 bg-teal-400/10 px-4 py-2 font-medium text-teal-100 transition hover:border-teal-300 hover:bg-teal-400/20" href="{{ route('storefront.cart') }}" aria-label="{{ __('storefront.navigation.cart_aria', ['count' => $cartQuantity]) }}">
                             {{ __('storefront.navigation.cart') }}
+                            @if ($cartQuantity > 0)
+                                <span class="inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-amber-300 px-1.5 text-xs font-bold text-slate-950">
+                                    {{ $cartQuantity }}
+                                </span>
+                            @endif
                         </a>
+                        <div class="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1" aria-label="{{ __('storefront.navigation.language') }}">
+                            @foreach ([['locale' => 'en', 'flag' => '🇺🇸', 'label' => __('storefront.navigation.language_en')], ['locale' => 'pt-BR', 'flag' => '🇧🇷', 'label' => __('storefront.navigation.language_pt_br')]] as $language)
+                                @php($isActiveLocale = str_replace('_', '-', app()->getLocale()) === $language['locale'])
+                                <a
+                                    class="{{ $isActiveLocale ? 'border-teal-300 bg-teal-400/15 text-white' : 'border-transparent text-slate-300 hover:text-white' }} inline-flex h-9 w-9 items-center justify-center rounded-full border text-base transition"
+                                    href="{{ route('storefront.locale', ['locale' => $language['locale']]) }}"
+                                    hreflang="{{ $language['locale'] }}"
+                                    aria-label="{{ $language['label'] }}"
+                                    aria-current="{{ $isActiveLocale ? 'true' : 'false' }}"
+                                >
+                                    <span aria-hidden="true">{{ $language['flag'] }}</span>
+                                </a>
+                            @endforeach
+                        </div>
                     </div>
                 </nav>
             </header>

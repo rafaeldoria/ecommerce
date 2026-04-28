@@ -3,6 +3,7 @@
 namespace Tests\Feature\Admin;
 
 use App\Livewire\Admin\Rarities;
+use App\Livewire\Admin\Rarities\Edit as EditRarity;
 use App\Models\User;
 use App\Modules\Catalog\Models\Game;
 use App\Modules\Catalog\Models\Product;
@@ -33,13 +34,12 @@ class RaritiesCrudTest extends TestCase
         $rarity = Rarity::query()->where('name', 'Arcana')->firstOrFail();
 
         Livewire::actingAs($admin)
-            ->test(Rarities::class)
-            ->call('edit', $rarity->getKey())
+            ->test(EditRarity::class, ['rarity' => $rarity])
             ->assertSet('name', 'Arcana')
             ->set('name', 'Immortal')
             ->call('save')
             ->assertHasNoErrors()
-            ->assertSee(__('admin.rarities.messages.updated'));
+            ->assertRedirect(route('admin.rarities.index'));
 
         $this->assertDatabaseHas('rarities', [
             'id' => $rarity->getKey(),
@@ -98,5 +98,21 @@ class RaritiesCrudTest extends TestCase
         $this->actingAs($customer)
             ->get(route('admin.rarities.index'))
             ->assertForbidden();
+    }
+
+    #[Test]
+    public function admin_rarities_index_is_paginated_and_links_to_dedicated_edit_pages(): void
+    {
+        $admin = User::factory()->admin()->create();
+        Rarity::factory()->count(11)->sequence(
+            fn ($sequence) => ['name' => sprintf('Rarity %02d', $sequence->index + 1)]
+        )->create();
+
+        $this->actingAs($admin)
+            ->get(route('admin.rarities.index'))
+            ->assertOk()
+            ->assertSee('Rarity 01')
+            ->assertSee(route('admin.rarities.edit', ['rarity' => Rarity::query()->where('name', 'Rarity 01')->first()]), false)
+            ->assertDontSee('Rarity 11');
     }
 }

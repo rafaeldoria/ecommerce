@@ -5,21 +5,21 @@
     </div>
 
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <article class="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-5">
+        <a class="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-5 transition hover:border-emerald-400/50 hover:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-400" href="{{ route('admin.games.index') }}">
             <p class="text-xs uppercase tracking-[0.2em] text-zinc-500">{{ __('admin.navigation.games') }}</p>
             <p class="mt-3 text-3xl font-semibold text-white">{{ $stats['games'] }}</p>
-        </article>
-        <article class="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-5">
+        </a>
+        <a class="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-5 transition hover:border-emerald-400/50 hover:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-400" href="{{ route('admin.rarities.index') }}">
             <p class="text-xs uppercase tracking-[0.2em] text-zinc-500">{{ __('admin.navigation.rarities') }}</p>
             <p class="mt-3 text-3xl font-semibold text-white">{{ $stats['rarities'] }}</p>
-        </article>
-        <article class="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-5">
+        </a>
+        <a class="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-5 transition hover:border-emerald-400/50 hover:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-400" href="{{ route('admin.products.index') }}">
             <p class="text-xs uppercase tracking-[0.2em] text-zinc-500">{{ __('admin.navigation.products') }}</p>
             <p class="mt-3 text-3xl font-semibold text-white">{{ $stats['products'] }}</p>
-        </article>
-        <article class="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-5">
+        </a>
+        <a class="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-5 transition hover:border-emerald-400/50 hover:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-400" href="{{ route('admin.orders.index') }}">
             <p class="text-xs uppercase tracking-[0.2em] text-zinc-500">{{ __('admin.navigation.orders') }}</p>
             <p class="mt-3 text-3xl font-semibold text-white">{{ $stats['orders'] }}</p>
-        </article>
+        </a>
     </div>
 </section>
