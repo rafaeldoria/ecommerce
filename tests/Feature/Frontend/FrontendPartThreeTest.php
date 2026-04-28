@@ -84,6 +84,38 @@ class FrontendPartThreeTest extends TestCase
     }
 
     #[Test]
+    public function product_detail_redirects_to_catalog_when_product_is_deleted_before_add_to_cart(): void
+    {
+        $product = Product::factory()->create(['name' => 'Soon Deleted Item']);
+        $component = Livewire::test(ProductShow::class, ['product' => $product]);
+
+        $product->delete();
+
+        $component
+            ->call('addToCart')
+            ->assertRedirect(route('storefront.catalog'));
+
+        $this->assertSame(__('storefront.cart.messages.product_unavailable'), session('cart.status'));
+    }
+
+    #[Test]
+    public function cart_quantity_error_is_cleared_after_successful_update(): void
+    {
+        $product = Product::factory()->create(['name' => 'Quantity Check Item']);
+
+        Livewire::test(ProductShow::class, ['product' => $product])
+            ->call('addToCart');
+
+        Livewire::test(Cart::class)
+            ->set("quantities.{$product->getKey()}", 0)
+            ->call('updateQuantity', $product->getKey())
+            ->assertHasErrors(["quantities.{$product->getKey()}"])
+            ->set("quantities.{$product->getKey()}", 2)
+            ->call('updateQuantity', $product->getKey())
+            ->assertHasNoErrors(["quantities.{$product->getKey()}"]);
+    }
+
+    #[Test]
     public function locale_selector_persists_the_selected_language(): void
     {
         $this->get(route('storefront.locale', ['locale' => 'pt-BR']))

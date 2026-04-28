@@ -5,6 +5,7 @@ namespace App\Livewire\Storefront;
 use App\Livewire\Concerns\UsesLocalizedPageTitle;
 use App\Modules\Cart\Actions\AddToCartAction;
 use App\Modules\Cart\DTOs\AddToCartData;
+use App\Modules\Cart\Exceptions\InvalidProductReference;
 use App\Modules\Catalog\Models\Product;
 use App\Modules\Catalog\Queries\GetAvailableStorefrontProductQuery;
 use App\Support\MoneyFormatter;
@@ -28,10 +29,16 @@ class ProductShow extends Component
 
     public function addToCart(AddToCartAction $addToCartAction)
     {
-        $addToCartAction->execute(new AddToCartData(
-            productId: $this->product->getKey(),
-            quantity: 1,
-        ));
+        try {
+            $addToCartAction->execute(new AddToCartData(
+                productId: $this->product->getKey(),
+                quantity: 1,
+            ));
+        } catch (InvalidProductReference $exception) {
+            session()->flash('cart.status', __('storefront.cart.messages.product_unavailable'));
+
+            return $this->redirectRoute('storefront.catalog');
+        }
 
         session()->flash('cart.status', __('storefront.cart.messages.added'));
 

@@ -66,6 +66,7 @@ return [
         'foundation_note' => 'Cart UI will stay aligned with the server-owned session cart.',
         'messages' => [
             'added' => 'Item added to your cart.',
+            'product_unavailable' => 'That item is no longer available. Please choose another product from the catalog.',
         ],
         'empty_title' => 'Your cart is empty.',
         'empty_description' => 'Browse the catalog and add an available item before starting checkout.',

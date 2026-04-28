@@ -55,6 +55,7 @@ class Cart extends Component
         }
 
         $this->syncQuantities($items);
+        $this->resetErrorBag("quantities.{$productId}");
     }
 
     public function removeItem(int $productId, RemoveFromCartAction $removeFromCartAction): void

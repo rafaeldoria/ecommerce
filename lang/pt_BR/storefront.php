@@ -66,6 +66,7 @@ return [
         'foundation_note' => 'A UI do carrinho continuara alinhada ao carrinho de sessao controlado pelo servidor.',
         'messages' => [
             'added' => 'Item adicionado ao carrinho.',
+            'product_unavailable' => 'Esse item nao esta mais disponivel. Escolha outro produto no catalogo.',
         ],
         'empty_title' => 'Seu carrinho esta vazio.',
         'empty_description' => 'Navegue pelo catalogo e adicione um item disponivel antes de iniciar o checkout.',
