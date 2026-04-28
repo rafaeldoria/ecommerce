@@ -3,6 +3,7 @@
 namespace Tests\Feature\Admin;
 
 use App\Livewire\Admin\Games;
+use App\Livewire\Admin\Games\Edit as EditGame;
 use App\Models\User;
 use App\Modules\Catalog\Models\Game;
 use App\Modules\Catalog\Models\Product;
@@ -33,13 +34,12 @@ class GamesCrudTest extends TestCase
         $game = Game::query()->where('name', 'Counter-Strike 2')->firstOrFail();
 
         Livewire::actingAs($admin)
-            ->test(Games::class)
-            ->call('edit', $game->getKey())
+            ->test(EditGame::class, ['game' => $game])
             ->assertSet('name', 'Counter-Strike 2')
             ->set('name', 'CS2')
             ->call('save')
             ->assertHasNoErrors()
-            ->assertSee(__('admin.games.messages.updated'));
+            ->assertRedirect(route('admin.games.index'));
 
         $this->assertDatabaseHas('games', [
             'id' => $game->getKey(),
@@ -98,5 +98,21 @@ class GamesCrudTest extends TestCase
         $this->actingAs($customer)
             ->get(route('admin.games.index'))
             ->assertForbidden();
+    }
+
+    #[Test]
+    public function admin_games_index_is_paginated_and_links_to_dedicated_edit_pages(): void
+    {
+        $admin = User::factory()->admin()->create();
+        Game::factory()->count(11)->sequence(
+            fn ($sequence) => ['name' => sprintf('Game %02d', $sequence->index + 1)]
+        )->create();
+
+        $this->actingAs($admin)
+            ->get(route('admin.games.index'))
+            ->assertOk()
+            ->assertSee('Game 01')
+            ->assertSee(route('admin.games.edit', ['game' => Game::query()->where('name', 'Game 01')->first()]), false)
+            ->assertDontSee('Game 11');
     }
 }

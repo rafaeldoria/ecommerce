@@ -3,6 +3,7 @@
 namespace Tests\Feature\Admin;
 
 use App\Livewire\Admin\Products;
+use App\Livewire\Admin\Products\Edit as EditProduct;
 use App\Models\User;
 use App\Modules\Catalog\Models\Game;
 use App\Modules\Catalog\Models\Product;
@@ -48,8 +49,7 @@ class ProductsCrudTest extends TestCase
         Storage::disk('public')->assertExists($this->storagePathFromPublicUrl($createdImageUrl));
 
         Livewire::actingAs($admin)
-            ->test(Products::class)
-            ->call('edit', $product->getKey())
+            ->test(EditProduct::class, ['product' => $product])
             ->assertSet('name', 'Phantom Assassin Arcana')
             ->set('name', 'Phantom Assassin Arcana Updated')
             ->set('image', $this->fakePngUpload('pa-updated.png'))
@@ -59,7 +59,7 @@ class ProductsCrudTest extends TestCase
             ->set('rarity_id', $rarity->getKey())
             ->call('save')
             ->assertHasNoErrors()
-            ->assertSee(__('admin.products.messages.updated'));
+            ->assertRedirect(route('admin.products.index'));
 
         $product->refresh();
 
@@ -96,8 +96,7 @@ class ProductsCrudTest extends TestCase
         ]);
 
         Livewire::actingAs($admin)
-            ->test(Products::class)
-            ->call('edit', $product->getKey())
+            ->test(EditProduct::class, ['product' => $product])
             ->set('name', 'Image Kept Product')
             ->set('quantity', 3)
             ->set('price', 2000)
@@ -146,6 +145,31 @@ class ProductsCrudTest extends TestCase
         $this->actingAs($customer)
             ->get(route('admin.products.index'))
             ->assertForbidden();
+    }
+
+    #[Test]
+    public function admin_products_index_is_paginated_links_to_edit_and_truncates_long_names(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $game = Game::factory()->create();
+        $rarity = Rarity::factory()->create();
+
+        Product::factory()->count(11)->sequence(
+            fn ($sequence) => [
+                'name' => sprintf('Very Long Product Name %02d With Extra Operational Text', $sequence->index + 1),
+                'game_id' => $game->getKey(),
+                'rarity_id' => $rarity->getKey(),
+            ],
+        )->create();
+
+        $firstProduct = Product::query()->where('name', 'Very Long Product Name 01 With Extra Operational Text')->firstOrFail();
+
+        $this->actingAs($admin)
+            ->get(route('admin.products.index'))
+            ->assertOk()
+            ->assertSee('truncate font-medium text-white', false)
+            ->assertSee(route('admin.products.edit', ['product' => $firstProduct]), false)
+            ->assertDontSee('Very Long Product Name 11 With Extra Operational Text');
     }
 
     private function storagePathFromPublicUrl(string $url): string
