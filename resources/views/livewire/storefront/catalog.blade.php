@@ -11,7 +11,12 @@
 
             <div class="rounded-3xl border border-white/10 bg-slate-950/70 px-5 py-4 text-left">
                 <p class="text-xs uppercase tracking-[0.2em] text-slate-500">{{ __('storefront.catalog.products_found_label') }}</p>
-                <p class="mt-2 text-3xl font-semibold text-white">{{ $visibleProductCount }}</p>
+                <p class="mt-2 text-3xl font-semibold text-white">{{ $totalProductCount }}</p>
+                @if ($products !== null && $products->total() > $products->count())
+                    <p class="mt-1 text-xs text-slate-400">
+                        {{ __('storefront.catalog.page_count_label', ['from' => $products->firstItem(), 'to' => $products->lastItem()]) }}
+                    </p>
+                @endif
             </div>
         </div>
 
@@ -33,11 +38,15 @@
     </div>
 
     <div class="mt-10">
-        @if ($products !== [])
+        @if ($products !== null && $products->isNotEmpty())
             <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                 @foreach ($products as $product)
                     <x-storefront.product-card :product="$product" :fallback-image="$fallbackImage" />
                 @endforeach
+            </div>
+
+            <div class="mt-8">
+                {{ $products->links() }}
             </div>
         @else
             <div class="rounded-[2rem] border border-dashed border-white/10 bg-slate-900/40 px-6 py-16 text-center">

@@ -5,7 +5,7 @@ namespace App\Livewire\Storefront;
 use App\Livewire\Concerns\UsesLocalizedPageTitle;
 use App\Modules\Catalog\Models\Game;
 use App\Modules\Catalog\Models\Product;
-use Illuminate\Support\Number;
+use App\Support\MoneyFormatter;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -42,7 +42,7 @@ class Home extends Component
                 'game' => $product->game->name,
                 'rarity' => $product->rarity->name,
                 'quantity' => $product->quantity,
-                'formatted_price' => Number::currency($product->price / 100, in: 'BRL', locale: app()->getLocale()),
+                'formatted_price' => MoneyFormatter::brlFromCents($product->price),
                 'route' => route('storefront.products.show', ['product' => $product]),
             ])->values()->all();
 

@@ -39,9 +39,16 @@
             <p class="mt-8 text-base leading-7 text-slate-300">{{ __('storefront.product.summary') }}</p>
 
             <div class="mt-8 flex flex-wrap gap-3">
-                <a class="inline-flex items-center rounded-full bg-teal-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-teal-300" href="{{ route('storefront.cart') }}">
-                    {{ __('storefront.product.go_to_cart') }}
-                </a>
+                <button
+                    class="inline-flex items-center rounded-full bg-teal-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-teal-300 disabled:cursor-not-allowed disabled:opacity-70"
+                    type="button"
+                    wire:click="addToCart"
+                    wire:loading.attr="disabled"
+                    wire:target="addToCart"
+                >
+                    <span wire:loading.remove wire:target="addToCart">{{ __('storefront.product.go_to_cart') }}</span>
+                    <span wire:loading wire:target="addToCart">{{ __('shared.states.loading') }}</span>
+                </button>
                 <a class="inline-flex items-center rounded-full border border-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/5" href="{{ route('storefront.catalog', ['game' => \Illuminate\Support\Str::slug($product->game->name)]) }}">
                     {{ __('storefront.product.back_to_catalog') }}
                 </a>

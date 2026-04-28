@@ -5,30 +5,29 @@ namespace App\Livewire\Storefront;
 use App\Livewire\Concerns\UsesLocalizedPageTitle;
 use App\Modules\Catalog\Models\Game;
 use App\Modules\Catalog\Models\Product;
+use App\Support\MoneyFormatter;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Number;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Url;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Layout('components.layouts.storefront')]
 class Catalog extends Component
 {
     use UsesLocalizedPageTitle;
+    use WithPagination;
 
     /**
      * @var array<int, array{id: int, name: string, slug: string, count: int}>
      */
     public array $games = [];
 
-    /**
-     * @var array<int, array{id: int, name: string, image_url: string, game: string, rarity: string, quantity: int, formatted_price: string, route: string}>
-     */
-    public array $products = [];
-
+    #[Url(as: 'game')]
     public ?string $selectedGameSlug = null;
 
-    public int $visibleProductCount = 0;
+    public int $totalProductCount = 0;
 
     public function mount(): void
     {
@@ -53,37 +52,60 @@ class Catalog extends Component
         $this->selectedGameSlug = $selectedGame !== null ? Str::slug($selectedGame->name) : null;
 
         if ($selectedGame === null) {
-            $this->products = [];
-            $this->visibleProductCount = 0;
+            $this->totalProductCount = 0;
 
             return;
         }
-
-        $products = Product::query()
-            ->with(['game:id,name', 'rarity:id,name'])
-            ->available()
-            ->where('game_id', $selectedGame->getKey())
-            ->orderBy('name')
-            ->get();
-
-        $this->products = $products
-            ->map(fn (Product $product): array => [
-                'id' => $product->getKey(),
-                'name' => $product->name,
-                'image_url' => $product->url_img,
-                'game' => $product->game->name,
-                'rarity' => $product->rarity->name,
-                'quantity' => $product->quantity,
-                'formatted_price' => Number::currency($product->price / 100, in: 'BRL', locale: app()->getLocale()),
-                'route' => route('storefront.products.show', ['product' => $product]),
-            ])->values()->all();
-
-        $this->visibleProductCount = count($this->products);
     }
 
     public function render()
     {
-        return $this->pageView('livewire.storefront.catalog');
+        $selectedGame = $this->selectedGame();
+        $products = null;
+
+        if ($selectedGame !== null) {
+            $products = Product::query()
+                ->with(['game:id,name', 'rarity:id,name'])
+                ->available()
+                ->where('game_id', $selectedGame->getKey())
+                ->orderBy('name')
+                ->paginate(9)
+                ->withQueryString()
+                ->through(fn (Product $product): array => [
+                    'id' => $product->getKey(),
+                    'name' => $product->name,
+                    'image_url' => $product->url_img,
+                    'game' => $product->game->name,
+                    'rarity' => $product->rarity->name,
+                    'quantity' => $product->quantity,
+                    'formatted_price' => MoneyFormatter::brlFromCents($product->price),
+                    'route' => route('storefront.products.show', ['product' => $product]),
+                ]);
+
+            $this->totalProductCount = $products->total();
+        }
+
+        return $this->pageView('livewire.storefront.catalog', [
+            'products' => $products,
+        ]);
+    }
+
+    public function selectGame(string $gameSlug): void
+    {
+        $this->selectedGameSlug = $gameSlug;
+        $this->resetPage();
+    }
+
+    private function selectedGame(): ?Game
+    {
+        if ($this->selectedGameSlug === null) {
+            return null;
+        }
+
+        return Game::query()
+            ->orderBy('name')
+            ->get()
+            ->first(fn (Game $game): bool => Str::slug($game->name) === $this->selectedGameSlug);
     }
 
     protected function titleKey(): string

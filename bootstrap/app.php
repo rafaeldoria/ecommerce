@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\ApplySessionLocale;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Responses\ApiProblemDetails;
 use App\Modules\Admin\Exceptions\InvalidAdminCredentials;
@@ -34,6 +35,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'admin' => EnsureUserIsAdmin::class,
+        ]);
+
+        $middleware->web(append: [
+            ApplySessionLocale::class,
         ]);
 
         $middleware->redirectGuestsTo(fn (Request $request): ?string => $request->is('admin*')

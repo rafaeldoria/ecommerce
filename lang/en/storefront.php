@@ -13,6 +13,10 @@ return [
         'contact' => 'Contact',
         'faq' => 'FAQ',
         'cart' => 'Cart',
+        'cart_aria' => 'Cart with :count item(s)',
+        'language' => 'Language selector',
+        'language_en' => 'Switch language to English',
+        'language_pt_br' => 'Switch language to Brazilian Portuguese',
     ],
     'home' => [
         'eyebrow' => 'Game items storefront',
@@ -38,6 +42,7 @@ return [
         'title' => 'Catalog',
         'summary' => 'Browse live inventory by game and see the items that are actually available right now.',
         'products_found_label' => 'Visible items',
+        'page_count_label' => 'Showing :from-:to on this page',
         'stock_label' => ':count available',
         'price_label' => 'Price',
         'view_product' => 'View product',
@@ -59,6 +64,18 @@ return [
     'cart' => [
         'title' => 'Cart',
         'foundation_note' => 'Cart UI will stay aligned with the server-owned session cart.',
+        'messages' => [
+            'added' => 'Item added to your cart.',
+        ],
+        'empty_title' => 'Your cart is empty.',
+        'empty_description' => 'Browse the catalog and add an available item before starting checkout.',
+        'continue_shopping' => 'Continue shopping',
+        'checkout' => 'Continue to checkout',
+        'quantity_label' => 'Quantity',
+        'unit_price' => 'Unit price: :price',
+        'subtotal' => 'Subtotal: :price',
+        'total_label' => 'Cart total',
+        'checkout_note' => 'Checkout keeps the MVP handoff simple: email and WhatsApp only.',
     ],
     'checkout' => [
         'title' => 'Checkout',
