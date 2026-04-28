@@ -18,6 +18,13 @@
         </button>
     </div>
 
+    @if (session('admin.status'))
+        <div class="rounded-lg border border-emerald-500/50 bg-emerald-950/40 px-4 py-3 text-emerald-100" role="status">
+            <p class="text-sm font-semibold">{{ __('admin.shared.status_success') }}</p>
+            <p class="mt-1 text-sm">{{ session('admin.status') }}</p>
+        </div>
+    @endif
+
     @if ($statusMessage !== null)
         <div
             class="{{ $statusTone === 'danger' ? 'border-red-500/50 bg-red-950/40 text-red-100' : 'border-emerald-500/50 bg-emerald-950/40 text-emerald-100' }} rounded-lg border px-4 py-3"
@@ -33,7 +40,7 @@
     @if ($isFormOpen)
         <form class="space-y-5 rounded-lg border border-zinc-800 bg-zinc-900/70 p-5" wire:submit="save">
             <h2 class="text-lg font-semibold text-white">
-                {{ $editingProductId === null ? __('admin.products.create_title') : __('admin.products.edit_title') }}
+                {{ __('admin.products.create_title') }}
             </h2>
 
             <div class="grid gap-5 lg:grid-cols-2">
@@ -62,7 +69,7 @@
                         accept="image/jpeg,image/png,image/webp"
                     >
                     <p class="mt-2 text-sm text-zinc-400">
-                        {{ $editingProductId === null ? __('admin.products.image_help_create') : __('admin.products.image_help_update') }}
+                        {{ __('admin.products.image_help_create') }}
                     </p>
                     @error('image')
                         <p class="mt-2 text-sm text-red-300">{{ $message }}</p>
@@ -132,18 +139,6 @@
                 </div>
             </div>
 
-            @if ($currentImageUrl !== null)
-                <div class="flex items-center gap-4 rounded-lg border border-zinc-800 bg-zinc-950 p-4">
-                    <img
-                        class="h-16 w-16 rounded-lg border border-zinc-800 object-cover"
-                        src="{{ $currentImageUrl !== '' ? $currentImageUrl : $fallbackImage }}"
-                        alt="{{ __('admin.products.current_image') }}"
-                        onerror="this.onerror=null;this.src='{{ $fallbackImage }}';"
-                    >
-                    <span class="text-sm text-zinc-300">{{ __('admin.products.current_image') }}</span>
-                </div>
-            @endif
-
             <div class="flex flex-wrap gap-3">
                 <button
                     class="inline-flex min-h-11 items-center justify-center rounded-lg bg-emerald-400 px-4 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-70"
@@ -152,7 +147,7 @@
                     wire:target="save,image"
                 >
                     <span wire:loading.remove wire:target="save">
-                        {{ $editingProductId === null ? __('admin.shared.create') : __('admin.shared.update') }}
+                        {{ __('admin.shared.create') }}
                     </span>
                     <span wire:loading wire:target="save">{{ __('admin.shared.saving') }}</span>
                 </button>
@@ -193,8 +188,8 @@
                                     alt="{{ $product->name }}"
                                     onerror="this.onerror=null;this.src='{{ $fallbackImage }}';"
                                 >
-                                <div>
-                                    <p class="font-medium text-white">{{ $product->name }}</p>
+                                <div class="min-w-0 max-w-[18rem]">
+                                    <p class="truncate font-medium text-white" title="{{ $product->name }}">{{ $product->name }}</p>
                                     <p class="text-sm text-zinc-400">#{{ $product->id }}</p>
                                 </div>
                             </div>
@@ -205,9 +200,9 @@
                         <td class="px-6 py-4 text-zinc-300">{{ $product->price }}</td>
                         <td class="px-6 py-4">
                             <div class="flex flex-wrap justify-end gap-2">
-                                <button class="rounded-lg border border-zinc-700 px-3 py-2 text-sm font-medium text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-800" type="button" wire:click="edit({{ $product->id }})">
+                                <a class="rounded-lg border border-zinc-700 px-3 py-2 text-sm font-medium text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-800" href="{{ route('admin.products.edit', ['product' => $product]) }}">
                                     {{ __('admin.shared.edit') }}
-                                </button>
+                                </a>
 
                                 @if ($confirmingDeleteProductId === $product->id)
                                     <button class="rounded-lg bg-red-400 px-3 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-red-300 disabled:cursor-not-allowed disabled:opacity-70" type="button" wire:click="delete" wire:loading.attr="disabled" wire:target="delete">
@@ -232,5 +227,9 @@
                 @endforelse
             </tbody>
         </table>
+    </div>
+
+    <div>
+        {{ $products->links() }}
     </div>
 </section>

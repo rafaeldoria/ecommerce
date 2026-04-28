@@ -16,6 +16,13 @@
         </button>
     </div>
 
+    @if (session('admin.status'))
+        <div class="rounded-lg border border-emerald-500/50 bg-emerald-950/40 px-4 py-3 text-emerald-100" role="status">
+            <p class="text-sm font-semibold">{{ __('admin.shared.status_success') }}</p>
+            <p class="mt-1 text-sm">{{ session('admin.status') }}</p>
+        </div>
+    @endif
+
     @if ($statusMessage !== null)
         <div
             class="{{ $statusTone === 'danger' ? 'border-red-500/50 bg-red-950/40 text-red-100' : 'border-emerald-500/50 bg-emerald-950/40 text-emerald-100' }} rounded-lg border px-4 py-3"
@@ -31,7 +38,7 @@
     @if ($isFormOpen)
         <form class="space-y-5 rounded-lg border border-zinc-800 bg-zinc-900/70 p-5" wire:submit="save">
             <h2 class="text-lg font-semibold text-white">
-                {{ $editingRarityId === null ? __('admin.rarities.create_title') : __('admin.rarities.edit_title') }}
+                {{ __('admin.rarities.create_title') }}
             </h2>
 
             <div>
@@ -57,7 +64,7 @@
                     wire:target="save"
                 >
                     <span wire:loading.remove wire:target="save">
-                        {{ $editingRarityId === null ? __('admin.shared.create') : __('admin.shared.update') }}
+                        {{ __('admin.shared.create') }}
                     </span>
                     <span wire:loading wire:target="save">{{ __('admin.shared.saving') }}</span>
                 </button>
@@ -91,9 +98,9 @@
                         <td class="px-6 py-4 text-zinc-400">#{{ $rarity->id }}</td>
                         <td class="px-6 py-4">
                             <div class="flex flex-wrap justify-end gap-2">
-                                <button class="rounded-lg border border-zinc-700 px-3 py-2 text-sm font-medium text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-800" type="button" wire:click="edit({{ $rarity->id }})">
+                                <a class="rounded-lg border border-zinc-700 px-3 py-2 text-sm font-medium text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-800" href="{{ route('admin.rarities.edit', ['rarity' => $rarity]) }}">
                                     {{ __('admin.shared.edit') }}
-                                </button>
+                                </a>
 
                                 @if ($confirmingDeleteRarityId === $rarity->id)
                                     <button class="rounded-lg bg-red-400 px-3 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-red-300 disabled:cursor-not-allowed disabled:opacity-70" type="button" wire:click="delete" wire:loading.attr="disabled" wire:target="delete">
@@ -118,5 +125,9 @@
                 @endforelse
             </tbody>
         </table>
+    </div>
+
+    <div>
+        {{ $rarities->links() }}
     </div>
 </section>

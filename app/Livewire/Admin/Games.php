@@ -5,22 +5,21 @@ namespace App\Livewire\Admin;
 use App\Livewire\Concerns\UsesLocalizedPageTitle;
 use App\Modules\Catalog\Actions\CreateGameAction;
 use App\Modules\Catalog\Actions\DeleteGameAction;
-use App\Modules\Catalog\Actions\UpdateGameAction;
 use App\Modules\Catalog\Exceptions\CatalogResourceInUse;
 use App\Modules\Catalog\Models\Game;
 use App\Modules\Catalog\Queries\ListAdminGamesQuery;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Layout('components.layouts.admin')]
 class Games extends Component
 {
     use UsesLocalizedPageTitle;
+    use WithPagination;
 
     public string $name = '';
-
-    public ?int $editingGameId = null;
 
     public ?int $confirmingDeleteGameId = null;
 
@@ -33,7 +32,7 @@ class Games extends Component
     public function render(ListAdminGamesQuery $listAdminGamesQuery)
     {
         return $this->pageView('livewire.admin.games', [
-            'games' => $listAdminGamesQuery->execute(),
+            'games' => $listAdminGamesQuery->executePaginated(10),
         ]);
     }
 
@@ -41,15 +40,11 @@ class Games extends Component
     {
         $validated = $this->validate($this->rules());
 
-        if ($this->editingGameId === null) {
-            app(CreateGameAction::class)->execute((string) $validated['name']);
-            $this->flashStatus(__('admin.games.messages.created'));
-        } else {
-            app(UpdateGameAction::class)->execute($this->editingGameId, (string) $validated['name']);
-            $this->flashStatus(__('admin.games.messages.updated'));
-        }
+        app(CreateGameAction::class)->execute((string) $validated['name']);
+        $this->flashStatus(__('admin.games.messages.created'));
 
         $this->resetForm();
+        $this->resetPage();
     }
 
     public function beginCreate(): void
@@ -57,18 +52,6 @@ class Games extends Component
         $this->resetForm();
         $this->clearStatus();
         $this->isFormOpen = true;
-    }
-
-    public function edit(int $gameId): void
-    {
-        $game = Game::query()->findOrFail($gameId);
-
-        $this->editingGameId = $game->getKey();
-        $this->confirmingDeleteGameId = null;
-        $this->isFormOpen = true;
-        $this->name = $game->name;
-        $this->resetValidation();
-        $this->clearStatus();
     }
 
     public function confirmDelete(int $gameId): void
@@ -87,6 +70,7 @@ class Games extends Component
             app(DeleteGameAction::class)->execute($this->confirmingDeleteGameId);
             $this->flashStatus(__('admin.games.messages.deleted'));
             $this->resetForm();
+            $this->resetPage();
         } catch (CatalogResourceInUse $exception) {
             $this->flashStatus($exception->getMessage(), 'danger');
         } finally {
@@ -115,14 +99,14 @@ class Games extends Component
                 'required',
                 'string',
                 'max:255',
-                Rule::unique(Game::class, 'name')->ignore($this->editingGameId),
+                Rule::unique(Game::class, 'name'),
             ],
         ];
     }
 
     private function resetForm(): void
     {
-        $this->reset('name', 'editingGameId', 'confirmingDeleteGameId', 'isFormOpen');
+        $this->reset('name', 'confirmingDeleteGameId', 'isFormOpen');
         $this->resetValidation();
     }
 

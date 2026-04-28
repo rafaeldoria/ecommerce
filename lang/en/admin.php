@@ -125,6 +125,7 @@ return [
         'cancel_delete' => 'Cancel delete',
         'create' => 'Create',
         'update' => 'Update',
+        'back_to_index' => 'Back to list',
         'saving' => 'Saving...',
         'deleting' => 'Deleting...',
     ],

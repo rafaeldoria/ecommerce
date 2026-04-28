@@ -3,6 +3,7 @@
 namespace App\Modules\Catalog\Queries;
 
 use App\Modules\Catalog\Models\Product;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 
 class ListAdminProductsQuery
@@ -13,5 +14,13 @@ class ListAdminProductsQuery
             ->with(['game:id,name', 'rarity:id,name'])
             ->orderBy('name')
             ->get();
+    }
+
+    public function executePaginated(int $perPage = 10): LengthAwarePaginator
+    {
+        return Product::query()
+            ->with(['game:id,name', 'rarity:id,name'])
+            ->orderBy('name')
+            ->paginate($perPage);
     }
 }

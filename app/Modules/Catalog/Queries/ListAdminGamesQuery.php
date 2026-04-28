@@ -3,6 +3,7 @@
 namespace App\Modules\Catalog\Queries;
 
 use App\Modules\Catalog\Models\Game;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 
 class ListAdminGamesQuery
@@ -12,5 +13,12 @@ class ListAdminGamesQuery
         return Game::query()
             ->orderBy('name')
             ->get();
+    }
+
+    public function executePaginated(int $perPage = 10): LengthAwarePaginator
+    {
+        return Game::query()
+            ->orderBy('name')
+            ->paginate($perPage);
     }
 }

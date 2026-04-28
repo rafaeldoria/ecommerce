@@ -43,7 +43,7 @@
 
                             <div class="text-right text-sm text-zinc-300">
                                 <p>{{ __('admin.orders.quantity_label', ['count' => $item->quantity]) }}</p>
-                                <p class="mt-1">{{ \Illuminate\Support\Number::currency($item->unit_price / 100, in: 'BRL', locale: app()->getLocale()) }}</p>
+                                <p class="mt-1">{{ \App\Support\MoneyFormatter::brlFromCents($item->unit_price) }}</p>
                             </div>
                         </div>
                     </article>

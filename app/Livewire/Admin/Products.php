@@ -5,9 +5,7 @@ namespace App\Livewire\Admin;
 use App\Livewire\Concerns\UsesLocalizedPageTitle;
 use App\Modules\Catalog\Actions\CreateProductAction;
 use App\Modules\Catalog\Actions\DeleteProductAction;
-use App\Modules\Catalog\Actions\UpdateProductAction;
 use App\Modules\Catalog\DTOs\CreateProductData;
-use App\Modules\Catalog\DTOs\UpdateProductData;
 use App\Modules\Catalog\Models\Game;
 use App\Modules\Catalog\Models\Product;
 use App\Modules\Catalog\Models\Rarity;
@@ -20,6 +18,7 @@ use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\WithFileUploads;
+use Livewire\WithPagination;
 use Throwable;
 
 #[Layout('components.layouts.admin')]
@@ -27,6 +26,7 @@ class Products extends Component
 {
     use UsesLocalizedPageTitle;
     use WithFileUploads;
+    use WithPagination;
 
     public string $name = '';
 
@@ -40,13 +40,9 @@ class Products extends Component
 
     public int|string|null $rarity_id = null;
 
-    public ?int $editingProductId = null;
-
     public ?int $confirmingDeleteProductId = null;
 
     public bool $isFormOpen = false;
-
-    public ?string $currentImageUrl = null;
 
     public ?string $statusMessage = null;
 
@@ -58,7 +54,7 @@ class Products extends Component
         ListAdminRaritiesQuery $listAdminRaritiesQuery,
     ) {
         return $this->pageView('livewire.admin.products', [
-            'products' => $listAdminProductsQuery->execute(),
+            'products' => $listAdminProductsQuery->executePaginated(10),
             'games' => $listAdminGamesQuery->execute(),
             'rarities' => $listAdminRaritiesQuery->execute(),
         ]);
@@ -69,15 +65,11 @@ class Products extends Component
         $validated = $this->validate($this->rules());
         $newImageUrl = $this->storedProductImageUrl();
 
-        if ($this->editingProductId === null) {
-            $this->createProduct($validated, (string) $newImageUrl);
-            $this->flashStatus(__('admin.products.messages.created'));
-        } else {
-            $this->updateProduct($validated, $newImageUrl);
-            $this->flashStatus(__('admin.products.messages.updated'));
-        }
+        $this->createProduct($validated, (string) $newImageUrl);
+        $this->flashStatus(__('admin.products.messages.created'));
 
         $this->resetForm();
+        $this->resetPage();
     }
 
     public function beginCreate(): void
@@ -85,24 +77,6 @@ class Products extends Component
         $this->resetForm();
         $this->clearStatus();
         $this->isFormOpen = true;
-    }
-
-    public function edit(int $productId): void
-    {
-        $product = Product::query()->findOrFail($productId);
-
-        $this->editingProductId = $product->getKey();
-        $this->confirmingDeleteProductId = null;
-        $this->isFormOpen = true;
-        $this->name = $product->name;
-        $this->quantity = $product->quantity;
-        $this->price = $product->price;
-        $this->game_id = $product->game_id;
-        $this->rarity_id = $product->rarity_id;
-        $this->currentImageUrl = $product->url_img;
-        $this->image = null;
-        $this->resetValidation();
-        $this->clearStatus();
     }
 
     public function confirmDelete(int $productId): void
@@ -121,6 +95,7 @@ class Products extends Component
 
         $this->flashStatus(__('admin.products.messages.deleted'));
         $this->resetForm();
+        $this->resetPage();
     }
 
     public function cancel(): void
@@ -139,18 +114,14 @@ class Products extends Component
      */
     private function rules(): array
     {
-        $imageRules = $this->editingProductId === null
-            ? ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048']
-            : ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'];
-
         return [
             'name' => [
                 'required',
                 'string',
                 'max:255',
-                Rule::unique(Product::class, 'name')->ignore($this->editingProductId)->withoutTrashed(),
+                Rule::unique(Product::class, 'name')->withoutTrashed(),
             ],
-            'image' => $imageRules,
+            'image' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'quantity' => ['required', 'integer', 'min:0'],
             'price' => ['required', 'integer', 'min:0'],
             'game_id' => ['required', 'integer', Rule::exists(Game::class, 'id')->whereNull('deleted_at')],
@@ -179,35 +150,6 @@ class Products extends Component
         }
     }
 
-    /**
-     * @param  array{name: string, quantity: int|string, price: int|string, game_id: int|string, rarity_id: int|string}  $validated
-     */
-    private function updateProduct(array $validated, ?string $newImageUrl): void
-    {
-        $previousImageUrl = $newImageUrl === null
-            ? null
-            : Product::query()->whereKey($this->editingProductId)->value('url_img');
-
-        try {
-            app(UpdateProductAction::class)->execute((int) $this->editingProductId, new UpdateProductData(
-                name: $validated['name'],
-                urlImg: $newImageUrl,
-                quantity: (int) $validated['quantity'],
-                price: (int) $validated['price'],
-                gameId: (int) $validated['game_id'],
-                rarityId: (int) $validated['rarity_id'],
-            ));
-        } catch (Throwable $exception) {
-            app(ProductImageStorage::class)->deleteIfOwned($newImageUrl);
-
-            throw $exception;
-        }
-
-        if ($newImageUrl !== null) {
-            app(ProductImageStorage::class)->deleteReplaced($previousImageUrl, $newImageUrl);
-        }
-    }
-
     private function storedProductImageUrl(): ?string
     {
         if (!$this->image instanceof UploadedFile) {
@@ -226,10 +168,8 @@ class Products extends Component
             'price',
             'game_id',
             'rarity_id',
-            'editingProductId',
             'confirmingDeleteProductId',
             'isFormOpen',
-            'currentImageUrl',
         );
         $this->resetValidation();
     }
