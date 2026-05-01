@@ -20,7 +20,7 @@ class AdminOrderResource extends JsonResource
             'id' => $this->getKey(),
             'email' => $this->email,
             'whatsapp' => $this->whatsapp,
-            'status' => $this->status,
+            'status' => $this->status->value,
             'created_at' => $this->created_at?->toISOString(),
             'total_amount' => $totalAmount,
             'items' => $this->items->map(static fn ($item): array => [

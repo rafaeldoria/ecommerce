@@ -11,7 +11,7 @@ class ListAdminOrdersQuery
     public function execute(): Collection
     {
         return Order::query()
-            ->with('items')
+            ->with(['items', 'payment'])
             ->latest()
             ->get();
     }
@@ -19,7 +19,7 @@ class ListAdminOrdersQuery
     public function executePaginated(int $perPage = 10): LengthAwarePaginator
     {
         return Order::query()
-            ->with('items')
+            ->with(['items', 'payment'])
             ->latest()
             ->paginate($perPage);
     }

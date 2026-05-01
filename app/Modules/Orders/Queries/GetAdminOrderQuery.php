@@ -10,7 +10,7 @@ class GetAdminOrderQuery
     public function execute(int $orderId): Order
     {
         $order = Order::query()
-            ->with('items')
+            ->with(['items', 'payment'])
             ->find($orderId);
 
         if ($order === null) {

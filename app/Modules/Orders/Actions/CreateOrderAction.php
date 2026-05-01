@@ -9,6 +9,7 @@ use App\Modules\Cart\Exceptions\InvalidCartQuantity;
 use App\Modules\Cart\Exceptions\InvalidProductReference;
 use App\Modules\Catalog\Models\Product;
 use App\Modules\Orders\DTOs\CreateOrderData;
+use App\Modules\Orders\Enums\OrderStatus;
 use App\Modules\Orders\Events\OrderCreated;
 use App\Modules\Orders\Exceptions\InsufficientStock;
 use App\Modules\Orders\Exceptions\InvalidOrderContact;
@@ -64,7 +65,7 @@ class CreateOrderAction
             $order = Order::query()->create([
                 'email' => $data->email,
                 'whatsapp' => $data->whatsapp,
-                'status' => Order::STATUS_PENDING_FULFILLMENT,
+                'status' => OrderStatus::Pending,
             ]);
 
             foreach ($cartItems as $cartItem) {

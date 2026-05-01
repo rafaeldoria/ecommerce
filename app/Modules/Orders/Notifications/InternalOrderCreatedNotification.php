@@ -32,7 +32,7 @@ class InternalOrderCreatedNotification extends Notification
             ]))
             ->line(__('general.notifications.internal_order_created.intro'))
             ->line(__('general.notifications.internal_order_created.order_status', [
-                'status' => $this->order->status,
+                'status' => $this->order->status->value,
             ]))
             ->line(__('general.notifications.internal_order_created.buyer_email', [
                 'email' => $this->order->email,

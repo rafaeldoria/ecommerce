@@ -3,6 +3,7 @@
 namespace Tests\Feature\Notifications;
 
 use App\Modules\Catalog\Models\Product;
+use App\Modules\Orders\Enums\OrderStatus;
 use App\Modules\Orders\Events\OrderCreated;
 use App\Modules\Orders\Listeners\NotifyInternalTeamOfCreatedOrder;
 use App\Modules\Orders\Models\Order;
@@ -27,7 +28,7 @@ class InternalOrderNotificationTest extends TestCase
         $order = Order::query()->create([
             'email' => 'buyer@example.com',
             'whatsapp' => '+55 11 98888-7777',
-            'status' => Order::STATUS_PENDING_FULFILLMENT,
+            'status' => OrderStatus::Pending,
         ]);
 
         event(new OrderCreated($order));
@@ -47,7 +48,7 @@ class InternalOrderNotificationTest extends TestCase
         $order = Order::query()->create([
             'email' => 'buyer@example.com',
             'whatsapp' => '+55 11 98888-7777',
-            'status' => Order::STATUS_PENDING_FULFILLMENT,
+            'status' => OrderStatus::Pending,
         ]);
 
         $product = Product::factory()->create([
@@ -85,7 +86,7 @@ class InternalOrderNotificationTest extends TestCase
         $order = Order::query()->create([
             'email' => 'buyer@example.com',
             'whatsapp' => '+55 11 98888-7777',
-            'status' => Order::STATUS_PENDING_FULFILLMENT,
+            'status' => OrderStatus::Pending,
         ]);
 
         app(NotifyInternalTeamOfCreatedOrder::class)->handle(new OrderCreated($order));

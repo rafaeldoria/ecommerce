@@ -41,6 +41,10 @@ return Application::configure(basePath: dirname(__DIR__))
             ApplySessionLocale::class,
         ]);
 
+        $middleware->validateCsrfTokens(except: [
+            'webhooks/mercado-pago',
+        ]);
+
         $middleware->redirectGuestsTo(fn (Request $request): ?string => $request->is('admin*')
             ? route('admin.login')
             : null);

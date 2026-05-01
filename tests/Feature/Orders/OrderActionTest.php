@@ -10,10 +10,10 @@ use App\Modules\Cart\Exceptions\InvalidCartQuantity;
 use App\Modules\Catalog\Models\Product;
 use App\Modules\Orders\Actions\CreateOrderAction;
 use App\Modules\Orders\DTOs\CreateOrderData;
+use App\Modules\Orders\Enums\OrderStatus;
 use App\Modules\Orders\Events\OrderCreated;
 use App\Modules\Orders\Exceptions\InsufficientStock;
 use App\Modules\Orders\Exceptions\InvalidOrderContact;
-use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderItem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
@@ -50,12 +50,12 @@ class OrderActionTest extends TestCase
             whatsapp: '+55 11 99999-1111',
         ));
 
-        $this->assertSame(Order::STATUS_PENDING_FULFILLMENT, $order->status);
+        $this->assertSame(OrderStatus::Pending, $order->status);
         $this->assertDatabaseHas('orders', [
             'id' => $order->getKey(),
             'email' => 'buyer@example.com',
             'whatsapp' => '+55 11 99999-1111',
-            'status' => Order::STATUS_PENDING_FULFILLMENT,
+            'status' => OrderStatus::Pending->value,
         ]);
         $this->assertDatabaseHas('order_items', [
             'order_id' => $order->getKey(),

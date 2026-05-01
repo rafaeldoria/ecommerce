@@ -18,7 +18,7 @@ class OrderResource extends JsonResource
             'id' => $this->getKey(),
             'email' => $this->email,
             'whatsapp' => $this->whatsapp,
-            'status' => $this->status,
+            'status' => $this->status->value,
             'items' => $this->items->map(static fn ($item): array => [
                 'product_id' => $item->product_id,
                 'product_name' => $item->product_name,

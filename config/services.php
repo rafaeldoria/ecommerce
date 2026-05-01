@@ -44,6 +44,8 @@ return [
         'public_key' => env('MERCADO_PAGO_PUBLIC_KEY'),
         'env' => env('MERCADO_PAGO_ENV', 'sandbox'),
         'statement_descriptor' => env('MERCADO_PAGO_STATEMENT_DESCRIPTOR', 'GRSHOP'),
+        'webhook_secret' => env('MERCADO_PAGO_WEBHOOK_SECRET'),
+        'webhook_tolerance_seconds' => env('MERCADO_PAGO_WEBHOOK_TOLERANCE_SECONDS', 300),
     ],
 
 ];
