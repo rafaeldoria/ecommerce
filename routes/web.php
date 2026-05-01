@@ -30,6 +30,15 @@ Route::get('/products/{product}', ProductShow::class)
     ->name('storefront.products.show');
 Route::get('/cart', Cart::class)->name('storefront.cart');
 Route::get('/checkout', Checkout::class)->name('storefront.checkout');
+Route::view('/checkout/mercado-pago/success', 'storefront.mercado-pago-return', [
+    'status' => 'success',
+])->name('storefront.mercado-pago.success');
+Route::view('/checkout/mercado-pago/failure', 'storefront.mercado-pago-return', [
+    'status' => 'failure',
+])->name('storefront.mercado-pago.failure');
+Route::view('/checkout/mercado-pago/pending', 'storefront.mercado-pago-return', [
+    'status' => 'pending',
+])->name('storefront.mercado-pago.pending');
 Route::get('/about', About::class)->name('storefront.about');
 Route::get('/contact', Contact::class)->name('storefront.contact');
 Route::get('/faq', Faq::class)->name('storefront.faq');

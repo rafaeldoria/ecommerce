@@ -81,6 +81,34 @@ return [
     'checkout' => [
         'title' => 'Checkout',
         'foundation_note' => 'O checkout coletara apenas email e WhatsApp para o handoff do MVP.',
+        'empty_description' => 'Adicione um item disponivel ao carrinho antes de iniciar o teste com o Checkout Pro.',
+        'contact_title' => 'Dados para iniciar o pagamento',
+        'contact_note' => 'Estes dados serao usados apenas para criar a preferencia de teste no Mercado Pago neste primeiro passo.',
+        'email_label' => 'Email',
+        'whatsapp_label' => 'WhatsApp',
+        'create_preference' => 'Gerar botao Mercado Pago',
+        'payment_ready' => 'Preferencia criada. Continue pelo botao oficial do Mercado Pago.',
+    ],
+    'payment_return' => [
+        'metadata_title' => 'Retorno Mercado Pago | GR-Shop',
+        'eyebrow' => 'Retorno do Mercado Pago',
+        'status_label' => 'Status recebido',
+        'payment_id_label' => 'Payment ID',
+        'preference_id_label' => 'Preference ID',
+        'external_reference_label' => 'Referencia externa',
+        'back_to_cart' => 'Voltar ao carrinho',
+        'success' => [
+            'title' => 'Pagamento aprovado no ambiente de teste',
+            'description' => 'Recebemos o retorno de sucesso do Mercado Pago. Nesta etapa o pedido ainda nao e criado nem o estoque e baixado automaticamente.',
+        ],
+        'failure' => [
+            'title' => 'Pagamento recusado no ambiente de teste',
+            'description' => 'Recebemos o retorno de falha do Mercado Pago. Use este estado para validar a experiencia antes da integracao completa de pedidos.',
+        ],
+        'pending' => [
+            'title' => 'Pagamento pendente no ambiente de teste',
+            'description' => 'Recebemos o retorno pendente do Mercado Pago. A confirmacao real por webhook fica para a proxima etapa da integracao.',
+        ],
     ],
     'content' => [
         'about_title' => 'Sobre a GR-Shop',
