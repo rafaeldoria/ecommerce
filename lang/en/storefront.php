@@ -81,6 +81,34 @@ return [
     'checkout' => [
         'title' => 'Checkout',
         'foundation_note' => 'Checkout will collect only email and WhatsApp for the MVP handoff.',
+        'empty_description' => 'Add an available item to your cart before starting the Checkout Pro test.',
+        'contact_title' => 'Contact details to start payment',
+        'contact_note' => 'These details are only used to create the Mercado Pago test preference in this first step.',
+        'email_label' => 'Email',
+        'whatsapp_label' => 'WhatsApp',
+        'create_preference' => 'Generate Mercado Pago button',
+        'payment_ready' => 'Preference created. Continue with the official Mercado Pago button.',
+    ],
+    'payment_return' => [
+        'metadata_title' => 'Mercado Pago Return | GR-Shop',
+        'eyebrow' => 'Mercado Pago return',
+        'status_label' => 'Received status',
+        'payment_id_label' => 'Payment ID',
+        'preference_id_label' => 'Preference ID',
+        'external_reference_label' => 'External reference',
+        'back_to_cart' => 'Back to cart',
+        'success' => [
+            'title' => 'Payment approved in the test environment',
+            'description' => 'Mercado Pago returned a success response. At this stage, the order is not created and stock is not decremented automatically.',
+        ],
+        'failure' => [
+            'title' => 'Payment rejected in the test environment',
+            'description' => 'Mercado Pago returned a failure response. Use this state to validate the experience before the complete order integration.',
+        ],
+        'pending' => [
+            'title' => 'Payment pending in the test environment',
+            'description' => 'Mercado Pago returned a pending response. Real confirmation by webhook is reserved for the next integration step.',
+        ],
     ],
     'content' => [
         'about_title' => 'About GR-Shop',

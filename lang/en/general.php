@@ -72,6 +72,8 @@ return [
         'invalid_order_email' => 'Order email must be valid.',
         'invalid_order_whatsapp' => 'WhatsApp number must contain between 10 and 15 digits.',
         'payment_processing_deferred' => 'Payment processing is intentionally deferred in this MVP.',
+        'payment_configuration_missing' => 'Configure Mercado Pago test credentials before starting checkout.',
+        'payment_preference_failed' => 'Mercado Pago checkout could not be started. Please try again shortly.',
         'product_image_storage_failed' => 'Product image could not be stored.',
     ],
     'notifications' => [

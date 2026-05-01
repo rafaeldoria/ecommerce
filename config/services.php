@@ -39,4 +39,11 @@ return [
         'email' => env('INTERNAL_ORDERS_EMAIL', env('MAIL_FROM_ADDRESS', 'hello@example.com')),
     ],
 
+    'mercado_pago' => [
+        'access_token' => env('MERCADO_PAGO_ACCESS_TOKEN'),
+        'public_key' => env('MERCADO_PAGO_PUBLIC_KEY'),
+        'env' => env('MERCADO_PAGO_ENV', 'sandbox'),
+        'statement_descriptor' => env('MERCADO_PAGO_STATEMENT_DESCRIPTOR', 'GRSHOP'),
+    ],
+
 ];
