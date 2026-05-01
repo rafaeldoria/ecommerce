@@ -26,7 +26,11 @@
                             <div>{{ $order->email }}</div>
                             <div class="text-sm text-zinc-500">{{ $order->whatsapp }}</div>
                         </td>
-                        <td class="px-6 py-4 text-zinc-300">{{ $order->status }}</td>
+                        <td class="px-6 py-4">
+                            <span class="{{ $order->status->value === 'completed' ? 'border-emerald-400/50 bg-emerald-400/10 text-emerald-100' : ($order->status->value === 'error' ? 'border-red-400/50 bg-red-400/10 text-red-100' : 'border-amber-300/40 bg-amber-300/10 text-amber-100') }} inline-flex rounded-full border px-3 py-1 text-xs font-semibold">
+                                {{ __("admin.orders.statuses.{$order->status->value}") }}
+                            </span>
+                        </td>
                         <td class="px-6 py-4 text-zinc-300">{{ $order->items->sum('quantity') }}</td>
                     </tr>
                 @empty

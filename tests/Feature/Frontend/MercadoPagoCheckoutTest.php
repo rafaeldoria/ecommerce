@@ -7,7 +7,7 @@ use App\Modules\Cart\Actions\AddToCartAction;
 use App\Modules\Cart\Actions\GetCurrentCartAction;
 use App\Modules\Cart\DTOs\AddToCartData;
 use App\Modules\Catalog\Models\Product;
-use App\Modules\Orders\Models\Order;
+use App\Modules\Orders\Enums\OrderStatus;
 use App\Modules\Payments\Contracts\CheckoutPreferenceGateway;
 use App\Modules\Payments\DTOs\CheckoutPreferenceData;
 use App\Modules\Payments\DTOs\CheckoutPreferenceResult;
@@ -33,7 +33,7 @@ class MercadoPagoCheckoutTest extends TestCase
         Livewire::test(Checkout::class)
             ->set('email', 'buyer@example.com')
             ->set('whatsapp', '+55 11 99999-1111')
-            ->call('createPreference')
+            ->call('startCheckout')
             ->assertHasErrors(['checkout']);
     }
 
@@ -45,12 +45,12 @@ class MercadoPagoCheckoutTest extends TestCase
         Livewire::test(Checkout::class)
             ->set('email', 'invalid-email')
             ->set('whatsapp', '123')
-            ->call('createPreference')
+            ->call('startCheckout')
             ->assertHasErrors(['email', 'whatsapp']);
     }
 
     #[Test]
-    public function checkout_renders_the_wallet_container_after_creating_a_preference_without_touching_orders_or_stock(): void
+    public function checkout_creates_a_pending_order_and_redirects_to_mercado_pago(): void
     {
         $this->app->bind(CheckoutPreferenceGateway::class, fn () => new class implements CheckoutPreferenceGateway
         {
@@ -79,22 +79,29 @@ class MercadoPagoCheckoutTest extends TestCase
             ->assertSee('AK-47 Redline')
             ->set('email', 'buyer@example.com')
             ->set('whatsapp', '+55 11 99999-1111')
-            ->call('createPreference')
+            ->call('startCheckout')
             ->assertHasNoErrors()
-            ->assertSet('preferenceId', 'pref_test_123')
-            ->assertSet('publicKey', 'TEST-public-key')
-            ->assertSee('walletBrick_container', false);
+            ->assertRedirect('https://sandbox.mercadopago.test/checkout');
 
         $checkoutView = file_get_contents(resource_path('views/livewire/storefront/checkout.blade.php'));
 
-        $this->assertStringContainsString("\$wire.\$on('mercado-pago-preference-created'", (string) $checkoutView);
-        $this->assertDatabaseCount((new Order)->getTable(), 0);
-        $this->assertSame(4, $product->refresh()->quantity);
-        $this->assertCount(1, app(GetCurrentCartAction::class)->execute());
+        $this->assertStringNotContainsString('walletBrick_container', (string) $checkoutView);
+        $this->assertStringNotContainsString('mercado-pago-preference-created', (string) $checkoutView);
+        $this->assertDatabaseHas('orders', [
+            'email' => 'buyer@example.com',
+            'status' => OrderStatus::Pending->value,
+        ]);
+        $this->assertDatabaseHas('payments', [
+            'mercado_pago_preference_id' => 'pref_test_123',
+            'amount_cents' => 2590,
+        ]);
+        $this->assertSame(3, $product->refresh()->quantity);
+        $this->assertSame([], app(GetCurrentCartAction::class)->execute());
+        $this->assertNotNull(session('checkout.pending_payment_id'));
     }
 
     #[Test]
-    public function mercado_pago_return_pages_render_the_received_status_context(): void
+    public function mercado_pago_return_pages_show_safe_buyer_guidance(): void
     {
         $this->get(route('storefront.mercado-pago.success', [
             'status' => 'approved',
@@ -103,7 +110,8 @@ class MercadoPagoCheckoutTest extends TestCase
             'external_reference' => 'cart-test-123',
         ]))
             ->assertOk()
-            ->assertSee('approved')
+            ->assertSee(__('storefront.payment_return.success.title'))
+            ->assertSee(__('storefront.payment_return.reference_note'))
             ->assertSee('123')
             ->assertSee('pref_test_123')
             ->assertSee('cart-test-123');

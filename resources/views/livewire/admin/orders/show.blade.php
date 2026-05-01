@@ -25,7 +25,27 @@
                 </div>
                 <div>
                     <dt class="text-xs uppercase tracking-[0.2em] text-zinc-500">{{ __('admin.tables.status') }}</dt>
-                    <dd class="mt-1 text-zinc-200">{{ $foundOrder->status }}</dd>
+                    <dd class="mt-1">
+                        <span class="{{ $foundOrder->status->value === 'completed' ? 'border-emerald-400/50 bg-emerald-400/10 text-emerald-100' : ($foundOrder->status->value === 'error' ? 'border-red-400/50 bg-red-400/10 text-red-100' : 'border-amber-300/40 bg-amber-300/10 text-amber-100') }} inline-flex rounded-full border px-3 py-1 text-xs font-semibold">
+                            {{ __("admin.orders.statuses.{$foundOrder->status->value}") }}
+                        </span>
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-xs uppercase tracking-[0.2em] text-zinc-500">{{ __('admin.orders.payment_status_label') }}</dt>
+                    <dd class="mt-1 text-zinc-200">{{ $foundOrder->payment?->status ?? __('admin.orders.payment_not_available') }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs uppercase tracking-[0.2em] text-zinc-500">{{ __('admin.orders.payment_detail_label') }}</dt>
+                    <dd class="mt-1 text-zinc-200">{{ $foundOrder->payment?->status_detail ?? __('admin.orders.payment_not_available') }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs uppercase tracking-[0.2em] text-zinc-500">{{ __('admin.orders.payment_id_label') }}</dt>
+                    <dd class="mt-1 text-zinc-200">{{ $foundOrder->payment?->mercado_pago_payment_id ?? __('admin.orders.payment_not_available') }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs uppercase tracking-[0.2em] text-zinc-500">{{ __('admin.orders.payment_updated_at_label') }}</dt>
+                    <dd class="mt-1 text-zinc-200">{{ $foundOrder->payment?->updated_at?->format('Y-m-d H:i') ?? __('admin.orders.payment_not_available') }}</dd>
                 </div>
             </dl>
         </div>

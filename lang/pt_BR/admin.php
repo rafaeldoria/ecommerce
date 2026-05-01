@@ -100,6 +100,16 @@ return [
         'items_block_title' => 'Itens do pedido',
         'whatsapp_label' => 'WhatsApp',
         'quantity_label' => 'Qtd: :count',
+        'payment_status_label' => 'Status Mercado Pago',
+        'payment_detail_label' => 'Detalhe Mercado Pago',
+        'payment_id_label' => 'Payment ID Mercado Pago',
+        'payment_updated_at_label' => 'Pagamento atualizado em',
+        'payment_not_available' => 'Ainda indisponivel',
+        'statuses' => [
+            'pending' => 'Pendente',
+            'completed' => 'Pago confirmado',
+            'error' => 'Erro no pagamento',
+        ],
     ],
     'tables' => [
         'id' => 'ID',

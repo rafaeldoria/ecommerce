@@ -11,7 +11,7 @@
         <dl class="mt-8 grid gap-3 rounded-[1.5rem] border border-white/10 bg-slate-900/70 p-5 text-sm sm:grid-cols-2">
             <div>
                 <dt class="text-slate-500">{{ __('storefront.payment_return.status_label') }}</dt>
-                <dd class="mt-1 font-semibold text-white">{{ request('status', $status) }}</dd>
+                <dd class="mt-1 font-semibold text-white">{{ __("storefront.payment_return.{$status}.title") }}</dd>
             </div>
             <div>
                 <dt class="text-slate-500">{{ __('storefront.payment_return.payment_id_label') }}</dt>
@@ -27,8 +27,15 @@
             </div>
         </dl>
 
-        <a class="mt-8 inline-flex items-center justify-center rounded-full bg-teal-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-teal-300" href="{{ route('storefront.cart') }}">
-            {{ __('storefront.payment_return.back_to_cart') }}
-        </a>
+        <p class="mt-4 text-sm text-slate-400">{{ __('storefront.payment_return.reference_note') }}</p>
+
+        <div class="mt-8 flex flex-wrap gap-3">
+            <a class="inline-flex items-center justify-center rounded-full bg-teal-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-teal-300" href="{{ route('storefront.cart') }}">
+                {{ __('storefront.payment_return.back_to_cart') }}
+            </a>
+            <a class="inline-flex items-center justify-center rounded-full border border-white/15 px-5 py-3 text-sm font-semibold text-white transition hover:border-teal-300 hover:text-teal-200" href="{{ route('storefront.contact') }}">
+                {{ __('storefront.payment_return.support_cta') }}
+            </a>
+        </div>
     </section>
 </x-layouts.storefront>

@@ -5,15 +5,15 @@ namespace App\Livewire\Storefront;
 use App\Livewire\Concerns\UsesLocalizedPageTitle;
 use App\Modules\Cart\Actions\GetCurrentCartAction;
 use App\Modules\Cart\Exceptions\EmptyCart;
-use App\Modules\Payments\Actions\CreateCheckoutPreferenceAction;
-use App\Modules\Payments\DTOs\CreateCheckoutPreferenceData;
+use App\Modules\Payments\Actions\StartPaymentCheckoutAction;
+use App\Modules\Payments\DTOs\StartPaymentCheckoutData;
 use App\Modules\Payments\Exceptions\InvalidCheckoutContact;
 use App\Modules\Payments\Exceptions\PaymentConfigurationMissing;
 use App\Support\MoneyFormatter;
+use Illuminate\Contracts\Session\Session;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
-use MercadoPago\Exceptions\MPApiException;
 use Throwable;
 
 #[Layout('components.layouts.storefront')]
@@ -25,12 +25,6 @@ class Checkout extends Component
 
     public string $whatsapp = '';
 
-    public ?string $preferenceId = null;
-
-    public ?string $publicKey = null;
-
-    public ?string $checkoutUrl = null;
-
     public function render(GetCurrentCartAction $getCurrentCartAction)
     {
         $items = $this->presentedItems($getCurrentCartAction->execute());
@@ -41,7 +35,7 @@ class Checkout extends Component
         ]);
     }
 
-    public function createPreference(CreateCheckoutPreferenceAction $createCheckoutPreferenceAction): void
+    public function startCheckout(StartPaymentCheckoutAction $startPaymentCheckoutAction, Session $session)
     {
         $this->validate([
             'email' => ['required', 'string', 'email'],
@@ -49,9 +43,10 @@ class Checkout extends Component
         ]);
 
         try {
-            $preference = $createCheckoutPreferenceAction->execute(new CreateCheckoutPreferenceData(
+            $result = $startPaymentCheckoutAction->execute(new StartPaymentCheckoutData(
                 email: $this->email,
                 whatsapp: $this->whatsapp,
+                existingPaymentId: $session->get('checkout.pending_payment_id'),
             ));
         } catch (EmptyCart $exception) {
             throw ValidationException::withMessages([
@@ -65,12 +60,6 @@ class Checkout extends Component
             throw ValidationException::withMessages([
                 'checkout' => $exception->getMessage(),
             ]);
-        } catch (MPApiException $exception) {
-            report($exception);
-
-            throw ValidationException::withMessages([
-                'checkout' => __('general.errors.payment_preference_failed'),
-            ]);
         } catch (Throwable $exception) {
             report($exception);
 
@@ -79,15 +68,9 @@ class Checkout extends Component
             ]);
         }
 
-        $this->preferenceId = $preference->preferenceId;
-        $this->publicKey = $preference->publicKey;
-        $this->checkoutUrl = $preference->checkoutUrl;
-        $this->resetErrorBag('checkout');
+        $session->put('checkout.pending_payment_id', $result->payment->getKey());
 
-        $this->dispatch('mercado-pago-preference-created',
-            preferenceId: $this->preferenceId,
-            publicKey: $this->publicKey,
-        );
+        return redirect()->away((string) $result->preference->checkoutUrl);
     }
 
     protected function titleKey(): string

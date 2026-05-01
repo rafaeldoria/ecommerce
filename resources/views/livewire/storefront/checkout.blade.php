@@ -15,7 +15,7 @@
         </div>
     @else
         <div class="mt-8 grid gap-6 lg:grid-cols-[1fr_24rem]">
-            <form class="rounded-[1.5rem] border border-white/10 bg-slate-900/70 p-5" wire:submit="createPreference">
+            <form class="rounded-[1.5rem] border border-white/10 bg-slate-900/70 p-5" wire:submit="startCheckout">
                 <h2 class="text-xl font-semibold text-white">{{ __('storefront.checkout.contact_title') }}</h2>
                 <p class="mt-2 text-sm leading-6 text-slate-400">{{ __('storefront.checkout.contact_note') }}</p>
 
@@ -57,22 +57,19 @@
                     </div>
                 @enderror
 
+                <div class="mt-5 rounded-xl border border-teal-300/20 bg-teal-300/10 px-4 py-3 text-sm leading-6 text-teal-50">
+                    {{ __('storefront.checkout.trust_note') }}
+                </div>
+
                 <button
                     class="mt-6 inline-flex w-full items-center justify-center rounded-full bg-teal-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-teal-300 disabled:cursor-not-allowed disabled:opacity-70"
                     type="submit"
                     wire:loading.attr="disabled"
-                    wire:target="createPreference"
+                    wire:target="startCheckout"
                 >
-                    <span wire:loading.remove wire:target="createPreference">{{ __('storefront.checkout.create_preference') }}</span>
-                    <span wire:loading wire:target="createPreference">{{ __('shared.states.loading') }}</span>
+                    <span wire:loading.remove wire:target="startCheckout">{{ __('storefront.checkout.complete_purchase') }}</span>
+                    <span wire:loading wire:target="startCheckout">{{ __('shared.states.loading') }}</span>
                 </button>
-
-                @if ($preferenceId !== null)
-                    <div class="mt-6 rounded-xl border border-teal-400/40 bg-teal-400/10 p-4">
-                        <p class="text-sm font-semibold text-teal-100">{{ __('storefront.checkout.payment_ready') }}</p>
-                        <div class="mt-4" id="walletBrick_container" wire:ignore></div>
-                    </div>
-                @endif
             </form>
 
             <aside class="h-fit rounded-[1.5rem] border border-white/10 bg-slate-900/70 p-5">
@@ -94,43 +91,4 @@
             </aside>
         </div>
     @endif
-
-    @script
-        <script>
-            const renderMercadoPagoWallet = async (payload) => {
-                const preferenceId = payload.preferenceId;
-                const publicKey = payload.publicKey;
-                const container = document.getElementById('walletBrick_container');
-
-                if (!preferenceId || !publicKey || !container) {
-                    return;
-                }
-
-                if (!window.MercadoPago) {
-                    await new Promise((resolve, reject) => {
-                        const script = document.createElement('script');
-                        script.src = 'https://sdk.mercadopago.com/js/v2';
-                        script.onload = resolve;
-                        script.onerror = reject;
-                        document.body.appendChild(script);
-                    });
-                }
-
-                container.innerHTML = '';
-
-                const mp = new window.MercadoPago(publicKey);
-                const bricksBuilder = mp.bricks();
-
-                await bricksBuilder.create('wallet', 'walletBrick_container', {
-                    initialization: {
-                        preferenceId,
-                    },
-                });
-            };
-
-            $wire.$on('mercado-pago-preference-created', (event) => {
-                renderMercadoPagoWallet(Array.isArray(event) ? event[0] : event);
-            });
-        </script>
-    @endscript
 </section>

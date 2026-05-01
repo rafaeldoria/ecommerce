@@ -100,6 +100,16 @@ return [
         'items_block_title' => 'Ordered items',
         'whatsapp_label' => 'WhatsApp',
         'quantity_label' => 'Qty: :count',
+        'payment_status_label' => 'Mercado Pago status',
+        'payment_detail_label' => 'Mercado Pago detail',
+        'payment_id_label' => 'Mercado Pago payment ID',
+        'payment_updated_at_label' => 'Payment updated at',
+        'payment_not_available' => 'Not available yet',
+        'statuses' => [
+            'pending' => 'Pending',
+            'completed' => 'Payment verified',
+            'error' => 'Payment error',
+        ],
     ],
     'tables' => [
         'id' => 'ID',
