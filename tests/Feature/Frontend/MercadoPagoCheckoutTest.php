@@ -85,6 +85,9 @@ class MercadoPagoCheckoutTest extends TestCase
             ->assertSet('publicKey', 'TEST-public-key')
             ->assertSee('walletBrick_container', false);
 
+        $checkoutView = file_get_contents(resource_path('views/livewire/storefront/checkout.blade.php'));
+
+        $this->assertStringContainsString("\$wire.\$on('mercado-pago-preference-created'", (string) $checkoutView);
         $this->assertDatabaseCount((new Order)->getTable(), 0);
         $this->assertSame(4, $product->refresh()->quantity);
         $this->assertCount(1, app(GetCurrentCartAction::class)->execute());

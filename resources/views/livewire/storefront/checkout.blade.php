@@ -128,7 +128,7 @@
                 });
             };
 
-            $wire.on('mercado-pago-preference-created', (event) => {
+            $wire.$on('mercado-pago-preference-created', (event) => {
                 renderMercadoPagoWallet(Array.isArray(event) ? event[0] : event);
             });
         </script>
