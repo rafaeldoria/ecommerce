@@ -60,6 +60,32 @@ class PaymentStatusProcessorTest extends TestCase
     }
 
     #[Test]
+    public function error_status_restores_stock_once(): void
+    {
+        $payment = $this->payment();
+        $item = $payment->order->items()->firstOrFail();
+        $product = Product::query()->findOrFail($item->product_id);
+        $details = new MercadoPagoPaymentDetails(
+            paymentId: '123456',
+            externalReference: $payment->external_reference,
+            status: 'rejected',
+            statusDetail: 'cc_rejected_other_reason',
+            amountCents: 2590,
+        );
+
+        $item->forceFill(['quantity' => 2])->save();
+        $product->forceFill(['quantity' => 3])->save();
+
+        app(ProcessMercadoPagoPaymentUpdateAction::class)->execute($details);
+        app(ProcessMercadoPagoPaymentUpdateAction::class)->execute($details);
+
+        $this->assertSame(OrderStatus::Error, $payment->order->refresh()->status);
+        $this->assertSame(5, $product->refresh()->quantity);
+        $this->assertTrue($payment->refresh()->metadata['stock_restored']);
+        $this->assertSame('payment_error', $payment->metadata['stock_restored_reason']);
+    }
+
+    #[Test]
     public function pending_updates_do_not_downgrade_completed_orders(): void
     {
         $payment = $this->payment(OrderStatus::Completed);

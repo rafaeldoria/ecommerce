@@ -35,6 +35,12 @@ class StartPaymentCheckoutAction
     {
         $this->guardContact($data);
 
+        $cartItems = $this->getCurrentCartAction->execute();
+
+        if ($cartItems !== []) {
+            $this->guardCartItems($cartItems);
+        }
+
         if ($data->existingPaymentId !== null) {
             $existing = Payment::query()
                 ->with(['order.items'])
@@ -45,11 +51,16 @@ class StartPaymentCheckoutAction
                 && $existing->mercado_pago_preference_id !== null
                 && $existing->mercado_pago_checkout_url !== null
                 && $existing->order->status === OrderStatus::Pending
+                && ($cartItems === [] || $this->cartMatchesOrder($cartItems, $existing->order))
             ) {
                 Log::info('Reusing pending Mercado Pago checkout attempt.', [
                     'payment_id' => $existing->getKey(),
                     'order_id' => $existing->order_id,
                 ]);
+
+                if ($cartItems !== []) {
+                    $this->clearCartAction->execute();
+                }
 
                 return new StartPaymentCheckoutResult(
                     $existing->order,
@@ -63,13 +74,9 @@ class StartPaymentCheckoutAction
             }
         }
 
-        $cartItems = $this->getCurrentCartAction->execute();
-
         if ($cartItems === []) {
             throw new EmptyCart(__('general.errors.empty_cart'));
         }
-
-        $this->guardCartItems($cartItems);
 
         $payment = DB::transaction(function () use ($cartItems, $data): Payment {
             $productIds = array_map(
@@ -200,6 +207,49 @@ class StartPaymentCheckoutAction
             $payment->forceFill(['metadata' => $metadata])->save();
             $payment->order->forceFill(['status' => OrderStatus::Error])->save();
         });
+    }
+
+    /**
+     * @param  array<int, array{product_id: int, quantity: int, unit_price: int, product_name: string}>  $cartItems
+     */
+    private function cartMatchesOrder(array $cartItems, Order $order): bool
+    {
+        $order->loadMissing('items');
+
+        return $this->normalizedCartItems($cartItems) === $order->items
+            ->map(fn ($item): array => [
+                'product_id' => (int) $item->product_id,
+                'quantity' => (int) $item->quantity,
+                'unit_price' => (int) $item->unit_price,
+            ])
+            ->sortBy(fn (array $item): string => $this->normalizedItemSortKey($item))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  array<int, array{product_id: int, quantity: int, unit_price: int, product_name: string}>  $cartItems
+     * @return array<int, array{product_id: int, quantity: int, unit_price: int}>
+     */
+    private function normalizedCartItems(array $cartItems): array
+    {
+        return collect($cartItems)
+            ->map(fn (array $item): array => [
+                'product_id' => (int) $item['product_id'],
+                'quantity' => (int) $item['quantity'],
+                'unit_price' => (int) $item['unit_price'],
+            ])
+            ->sortBy(fn (array $item): string => $this->normalizedItemSortKey($item))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  array{product_id: int, quantity: int, unit_price: int}  $item
+     */
+    private function normalizedItemSortKey(array $item): string
+    {
+        return sprintf('%010d:%010d:%010d', $item['product_id'], $item['quantity'], $item['unit_price']);
     }
 
     private function guardCartItems(array $cartItems): void

@@ -144,6 +144,66 @@ class CheckoutPreferenceActionTest extends TestCase
     }
 
     #[Test]
+    public function it_does_not_reuse_a_pending_payment_when_the_current_cart_changed(): void
+    {
+        $gateway = new class implements CheckoutPreferenceGateway
+        {
+            public int $calls = 0;
+
+            public function create(CheckoutPreferenceData $data): CheckoutPreferenceResult
+            {
+                $this->calls++;
+
+                return new CheckoutPreferenceResult(
+                    preferenceId: 'pref_new_123',
+                    publicKey: 'TEST-public-key',
+                    checkoutUrl: 'https://sandbox.mercadopago.test/new-checkout',
+                );
+            }
+        };
+
+        $this->app->instance(CheckoutPreferenceGateway::class, $gateway);
+
+        $oldProduct = Product::factory()->create(['price' => 2590]);
+        $newProduct = Product::factory()->create([
+            'price' => 139900,
+            'quantity' => 5,
+        ]);
+        $order = Order::query()->create([
+            'email' => 'buyer@example.com',
+            'whatsapp' => '+55 11 99999-1111',
+            'status' => OrderStatus::Pending,
+        ]);
+        $order->items()->create([
+            'product_id' => $oldProduct->getKey(),
+            'product_name' => $oldProduct->name,
+            'unit_price' => $oldProduct->price,
+            'quantity' => 1,
+        ]);
+        $oldPayment = Payment::query()->create([
+            'order_id' => $order->getKey(),
+            'external_reference' => 'payment-'.$order->getKey().'-existing',
+            'mercado_pago_preference_id' => 'pref_existing_123',
+            'mercado_pago_checkout_url' => 'https://sandbox.mercadopago.test/existing-checkout',
+            'amount_cents' => $oldProduct->price,
+        ]);
+
+        app(AddToCartAction::class)->execute(new AddToCartData($newProduct->getKey(), 2));
+
+        $result = app(StartPaymentCheckoutAction::class)->execute(new StartPaymentCheckoutData(
+            email: 'buyer@example.com',
+            whatsapp: '+55 11 99999-1111',
+            existingPaymentId: $oldPayment->getKey(),
+        ));
+
+        $this->assertSame('pref_new_123', $result->preference->preferenceId);
+        $this->assertNotSame($oldPayment->getKey(), $result->payment->getKey());
+        $this->assertSame(1, $gateway->calls);
+        $this->assertSame(3, $newProduct->refresh()->quantity);
+        $this->assertSame([], app(GetCurrentCartAction::class)->execute());
+    }
+
+    #[Test]
     public function it_does_not_reuse_a_completed_payment_attempt_from_the_session(): void
     {
         $gateway = new class implements CheckoutPreferenceGateway
