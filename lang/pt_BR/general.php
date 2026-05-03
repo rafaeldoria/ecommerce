@@ -73,6 +73,7 @@ return [
         'invalid_order_whatsapp' => 'O numero de WhatsApp deve conter entre 10 e 15 digitos.',
         'payment_processing_deferred' => 'O processamento de pagamento esta intencionalmente adiado neste MVP.',
         'payment_configuration_missing' => 'Configure as credenciais de teste do Mercado Pago antes de iniciar o checkout.',
+        'payment_configuration_invalid' => 'A configuracao de ambiente do Mercado Pago esta invalida.',
         'payment_preference_failed' => 'Nao foi possivel iniciar o checkout do Mercado Pago. Tente novamente em alguns instantes.',
         'product_image_storage_failed' => 'Nao foi possivel salvar a imagem do produto.',
     ],

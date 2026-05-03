@@ -42,7 +42,8 @@ return [
     'mercado_pago' => [
         'access_token' => env('MERCADO_PAGO_ACCESS_TOKEN'),
         'public_key' => env('MERCADO_PAGO_PUBLIC_KEY'),
-        'env' => env('MERCADO_PAGO_ENV', 'sandbox'),
+        'credential_mode' => env('MERCADO_PAGO_MODE', 'test'),
+        'checkout_url_strategy' => env('MERCADO_PAGO_CHECKOUT_URL_STRATEGY', 'init_point'),
         'statement_descriptor' => env('MERCADO_PAGO_STATEMENT_DESCRIPTOR', 'GRSHOP'),
     ],
 
