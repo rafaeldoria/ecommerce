@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Modules\Catalog\Models\Game;
 use App\Modules\Catalog\Models\Product;
 use App\Modules\Catalog\Models\Rarity;
+use App\Modules\Orders\Enums\OrderStatus;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderItem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -40,7 +41,7 @@ class AdminPartThreeTest extends TestCase
             $order = Order::query()->create([
                 'email' => sprintf('buyer%02d@example.com', $index),
                 'whatsapp' => '+55 11 99999-0000',
-                'status' => Order::STATUS_PENDING_FULFILLMENT,
+                'status' => OrderStatus::PendingFulfillment->value,
             ]);
             $order->forceFill([
                 'created_at' => now()->addMinutes($index),

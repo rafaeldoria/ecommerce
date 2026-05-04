@@ -7,10 +7,13 @@ use App\Modules\Cart\Actions\AddToCartAction;
 use App\Modules\Cart\Actions\GetCurrentCartAction;
 use App\Modules\Cart\DTOs\AddToCartData;
 use App\Modules\Catalog\Models\Product;
+use App\Modules\Orders\Enums\OrderStatus;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Payments\Contracts\CheckoutPreferenceGateway;
 use App\Modules\Payments\DTOs\CheckoutPreferenceData;
 use App\Modules\Payments\DTOs\CheckoutPreferenceResult;
+use App\Modules\Payments\Enums\PaymentStatus;
+use App\Modules\Payments\Models\Payment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\Test;
@@ -50,7 +53,7 @@ class MercadoPagoCheckoutTest extends TestCase
     }
 
     #[Test]
-    public function checkout_renders_the_wallet_container_after_creating_a_preference_without_touching_orders_or_stock(): void
+    public function checkout_renders_the_wallet_container_after_creating_pending_order_and_payment(): void
     {
         $this->app->bind(CheckoutPreferenceGateway::class, fn () => new class implements CheckoutPreferenceGateway
         {
@@ -67,7 +70,7 @@ class MercadoPagoCheckoutTest extends TestCase
         $product = Product::factory()->create([
             'name' => 'AK-47 Redline',
             'price' => 2590,
-            'quantity' => 4,
+            'quantity' => 1,
         ]);
 
         app(AddToCartAction::class)->execute(new AddToCartData(
@@ -88,8 +91,15 @@ class MercadoPagoCheckoutTest extends TestCase
         $checkoutView = file_get_contents(resource_path('views/livewire/storefront/checkout.blade.php'));
 
         $this->assertStringContainsString("\$wire.\$on('mercado-pago-preference-created'", (string) $checkoutView);
-        $this->assertDatabaseCount((new Order)->getTable(), 0);
-        $this->assertSame(4, $product->refresh()->quantity);
+        $order = Order::query()->firstOrFail();
+        $payment = Payment::query()->firstOrFail();
+
+        $this->assertSame(OrderStatus::PendingPayment->value, $order->status);
+        $this->assertSame($order->getKey(), $payment->order_id);
+        $this->assertSame(PaymentStatus::Pending->value, $payment->status);
+        $this->assertSame('pref_test_123', $payment->provider_preference_id);
+        $this->assertSame(2590, $payment->amount_cents);
+        $this->assertSame(0, $product->refresh()->quantity);
         $this->assertCount(1, app(GetCurrentCartAction::class)->execute());
     }
 
