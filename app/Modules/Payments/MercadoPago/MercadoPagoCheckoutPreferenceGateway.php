@@ -37,6 +37,7 @@ class MercadoPagoCheckoutPreferenceGateway implements CheckoutPreferenceGateway
             preferenceId: (string) $preference->id,
             publicKey: $publicKey,
             checkoutUrl: $this->checkoutUrlResolver->resolve($preference),
+            rawProviderResponse: $this->providerSnapshot($preference),
         );
     }
 
@@ -49,5 +50,12 @@ class MercadoPagoCheckoutPreferenceGateway implements CheckoutPreferenceGateway
         }
 
         return $credentialMode;
+    }
+
+    private function providerSnapshot(object $preference): array
+    {
+        $snapshot = json_decode((string) json_encode($preference), true);
+
+        return is_array($snapshot) ? $snapshot : [];
     }
 }
