@@ -66,4 +66,33 @@ class MercadoPagoPreferenceRequestFactoryTest extends TestCase
 
         $this->assertArrayNotHasKey('auto_return', $request);
     }
+
+    #[Test]
+    public function it_enables_auto_return_for_the_public_https_return_url(): void
+    {
+        $request = app(MercadoPagoPreferenceRequestFactory::class)->create(new CheckoutPreferenceData(
+            email: 'buyer@example.com',
+            externalReference: 'payment-external-reference-123',
+            items: [
+                [
+                    'id' => '10',
+                    'title' => 'Dota 2 Item',
+                    'quantity' => 1,
+                    'unit_price' => 25.9,
+                    'currency_id' => 'BRL',
+                ],
+            ],
+            backUrls: [
+                'success' => 'https://gains-bootlace-slacking.ngrok-free.dev/checkout/mercado-pago/success',
+                'failure' => 'https://gains-bootlace-slacking.ngrok-free.dev/checkout/mercado-pago/failure',
+                'pending' => 'https://gains-bootlace-slacking.ngrok-free.dev/checkout/mercado-pago/pending',
+            ],
+        ));
+
+        $this->assertSame(
+            'https://gains-bootlace-slacking.ngrok-free.dev/checkout/mercado-pago/success',
+            $request['back_urls']['success'],
+        );
+        $this->assertSame('approved', $request['auto_return']);
+    }
 }

@@ -3,6 +3,7 @@
 namespace App\Livewire\Storefront;
 
 use App\Livewire\Concerns\UsesLocalizedPageTitle;
+use App\Modules\Cart\Actions\ClearCartAction;
 use App\Modules\Cart\Actions\GetCurrentCartAction;
 use App\Modules\Cart\Exceptions\EmptyCart;
 use App\Modules\Payments\Actions\CreateCheckoutPreferenceAction;
@@ -25,12 +26,6 @@ class Checkout extends Component
 
     public string $whatsapp = '';
 
-    public ?string $preferenceId = null;
-
-    public ?string $publicKey = null;
-
-    public ?string $checkoutUrl = null;
-
     public function render(GetCurrentCartAction $getCurrentCartAction)
     {
         $items = $this->presentedItems($getCurrentCartAction->execute());
@@ -41,8 +36,10 @@ class Checkout extends Component
         ]);
     }
 
-    public function createPreference(CreateCheckoutPreferenceAction $createCheckoutPreferenceAction): void
-    {
+    public function pay(
+        CreateCheckoutPreferenceAction $createCheckoutPreferenceAction,
+        ClearCartAction $clearCartAction,
+    ) {
         $this->validate([
             'email' => ['required', 'string', 'email'],
             'whatsapp' => ['required', 'string', 'min:10', 'max:20'],
@@ -79,15 +76,10 @@ class Checkout extends Component
             ]);
         }
 
-        $this->preferenceId = $preference->preferenceId;
-        $this->publicKey = $preference->publicKey;
-        $this->checkoutUrl = $preference->checkoutUrl;
         $this->resetErrorBag('checkout');
+        $clearCartAction->execute();
 
-        $this->dispatch('mercado-pago-preference-created',
-            preferenceId: $this->preferenceId,
-            publicKey: $this->publicKey,
-        );
+        return redirect()->away((string) $preference->checkoutUrl);
     }
 
     protected function titleKey(): string

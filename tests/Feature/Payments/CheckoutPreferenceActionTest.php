@@ -17,9 +17,11 @@ use App\Modules\Payments\DTOs\CreateCheckoutPreferenceData;
 use App\Modules\Payments\Enums\PaymentProvider;
 use App\Modules\Payments\Enums\PaymentStatus;
 use App\Modules\Payments\Exceptions\InvalidCheckoutContact;
+use App\Modules\Payments\Exceptions\PaymentConfigurationMissing;
 use App\Modules\Payments\Models\Payment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
@@ -33,6 +35,7 @@ class CheckoutPreferenceActionTest extends TestCase
     public function it_creates_a_pending_order_and_payment_before_returning_the_checkout_preference(): void
     {
         Event::fake();
+        URL::forceRootUrl('https://gains-bootlace-slacking.ngrok-free.dev');
 
         $gateway = new class implements CheckoutPreferenceGateway
         {
@@ -81,7 +84,10 @@ class CheckoutPreferenceActionTest extends TestCase
                 'currency_id' => 'BRL',
             ],
         ], $gateway->data?->items);
-        $this->assertSame(route('storefront.mercado-pago.success'), $gateway->data?->backUrls['success']);
+        $this->assertSame(
+            'https://gains-bootlace-slacking.ngrok-free.dev/checkout/mercado-pago/success',
+            $gateway->data?->backUrls['success'],
+        );
 
         $order = Order::query()->firstOrFail();
         $payment = Payment::query()->where('external_reference', $gateway->data?->externalReference)->firstOrFail();
@@ -161,6 +167,56 @@ class CheckoutPreferenceActionTest extends TestCase
     }
 
     #[Test]
+    public function it_reuses_a_pending_preference_without_requiring_the_public_key_for_redirect_checkout(): void
+    {
+        $gateway = new class implements CheckoutPreferenceGateway
+        {
+            public int $calls = 0;
+
+            public function create(CheckoutPreferenceData $data): CheckoutPreferenceResult
+            {
+                $this->calls++;
+
+                return new CheckoutPreferenceResult(
+                    preferenceId: 'pref_test_123',
+                    publicKey: '',
+                    checkoutUrl: 'https://sandbox.mercadopago.test/checkout',
+                );
+            }
+        };
+
+        $this->app->instance(CheckoutPreferenceGateway::class, $gateway);
+
+        $product = Product::factory()->create([
+            'price' => 5000,
+            'quantity' => 3,
+        ]);
+
+        app(AddToCartAction::class)->execute(new AddToCartData(
+            productId: $product->getKey(),
+            quantity: 1,
+        ));
+
+        $data = new CreateCheckoutPreferenceData(
+            email: 'buyer@example.com',
+            whatsapp: '+55 11 99999-1111',
+        );
+
+        app(CreateCheckoutPreferenceAction::class)->execute($data);
+
+        config(['services.mercado_pago.public_key' => '']);
+
+        $secondResult = app(CreateCheckoutPreferenceAction::class)->execute($data);
+
+        $this->assertSame('pref_test_123', $secondResult->preferenceId);
+        $this->assertSame('', $secondResult->publicKey);
+        $this->assertSame('https://sandbox.mercadopago.test/checkout', $secondResult->checkoutUrl);
+        $this->assertSame(1, $gateway->calls);
+        $this->assertDatabaseCount((new Order)->getTable(), 1);
+        $this->assertDatabaseCount((new Payment)->getTable(), 1);
+    }
+
+    #[Test]
     public function it_rejects_invalid_contact_data_before_creating_a_preference(): void
     {
         Product::factory()->create();
@@ -209,5 +265,45 @@ class CheckoutPreferenceActionTest extends TestCase
         $this->assertDatabaseCount((new Payment)->getTable(), 0);
         $this->assertSame(2, $product->refresh()->quantity);
         $this->assertCount(1, app(GetCurrentCartAction::class)->execute());
+    }
+
+    #[Test]
+    public function it_restores_stock_and_discards_local_checkout_state_when_preference_has_no_checkout_url(): void
+    {
+        $this->app->instance(CheckoutPreferenceGateway::class, new class implements CheckoutPreferenceGateway
+        {
+            public function create(CheckoutPreferenceData $data): CheckoutPreferenceResult
+            {
+                return new CheckoutPreferenceResult(
+                    preferenceId: 'pref_test_123',
+                    publicKey: 'TEST-public-key',
+                    checkoutUrl: null,
+                );
+            }
+        });
+
+        $product = Product::factory()->create([
+            'price' => 10000,
+            'quantity' => 2,
+        ]);
+
+        app(AddToCartAction::class)->execute(new AddToCartData(
+            productId: $product->getKey(),
+            quantity: 1,
+        ));
+
+        try {
+            app(CreateCheckoutPreferenceAction::class)->execute(new CreateCheckoutPreferenceData(
+                email: 'buyer@example.com',
+                whatsapp: '+55 11 99999-1111',
+            ));
+
+            $this->fail('Preference creation should have failed.');
+        } catch (PaymentConfigurationMissing) {
+            $this->assertDatabaseCount((new Order)->getTable(), 0);
+            $this->assertDatabaseCount((new Payment)->getTable(), 0);
+            $this->assertSame(2, $product->refresh()->quantity);
+            $this->assertCount(1, app(GetCurrentCartAction::class)->execute());
+        }
     }
 }

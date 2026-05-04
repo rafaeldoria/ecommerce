@@ -56,9 +56,11 @@ class CreateCheckoutPreferenceAction
                 ],
             ));
 
+            $checkoutUrl = $this->checkoutUrlOrFail($preference);
+
             $payment->update([
                 'provider_preference_id' => $preference->preferenceId,
-                'checkout_url' => $preference->checkoutUrl,
+                'checkout_url' => $checkoutUrl,
                 'metadata' => array_merge($payment->metadata ?? [], [
                     'checkout_intent_hash' => $checkoutIntentHash,
                     'checkout_preference_public_key' => $preference->publicKey,
@@ -70,12 +72,28 @@ class CreateCheckoutPreferenceAction
                     : $preference->rawProviderResponse,
             ]);
 
-            return $preference;
+            return new CheckoutPreferenceResult(
+                preferenceId: $preference->preferenceId,
+                publicKey: $preference->publicKey,
+                checkoutUrl: $checkoutUrl,
+                rawProviderResponse: $preference->rawProviderResponse,
+            );
         } catch (Throwable $exception) {
             $this->discardPendingCheckout($payment);
 
             throw $exception;
         }
+    }
+
+    private function checkoutUrlOrFail(CheckoutPreferenceResult $preference): string
+    {
+        $checkoutUrl = trim((string) $preference->checkoutUrl);
+
+        if ($checkoutUrl === '') {
+            throw new PaymentConfigurationMissing(__('general.errors.payment_configuration_invalid'));
+        }
+
+        return $checkoutUrl;
     }
 
     private function findReusablePendingPreference(string $checkoutIntentHash): ?Payment
@@ -86,6 +104,7 @@ class CreateCheckoutPreferenceAction
             ->where('provider', PaymentProvider::MercadoPago->value)
             ->where('status', PaymentStatus::Pending->value)
             ->whereNotNull('provider_preference_id')
+            ->whereNotNull('checkout_url')
             ->where('metadata->checkout_intent_hash', $checkoutIntentHash)
             ->whereHas('order', fn ($query) => $query->where('status', OrderStatus::PendingPayment->value))
             ->latest('id')
@@ -98,10 +117,6 @@ class CreateCheckoutPreferenceAction
     {
         $metadata = $payment->metadata ?? [];
         $publicKey = (string) ($metadata['checkout_preference_public_key'] ?? config('services.mercado_pago.public_key', ''));
-
-        if (trim($publicKey) === '') {
-            throw new PaymentConfigurationMissing(__('general.errors.payment_configuration_missing'));
-        }
 
         return new CheckoutPreferenceResult(
             preferenceId: (string) $payment->provider_preference_id,
