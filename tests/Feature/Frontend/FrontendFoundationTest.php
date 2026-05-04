@@ -60,6 +60,30 @@ class FrontendFoundationTest extends TestCase
     }
 
     #[Test]
+    public function storefront_respects_forwarded_https_when_served_through_a_tunnel(): void
+    {
+        $game = Game::factory()->create(['name' => 'Dota 2']);
+        $rarity = Rarity::factory()->create(['name' => 'Arcana']);
+        $product = Product::factory()->create([
+            'name' => 'Phantom Assassin Arcana',
+            'game_id' => $game->id,
+            'rarity_id' => $rarity->id,
+        ]);
+
+        $this->withServerVariables([
+            'HTTP_HOST' => 'gains-bootlace-slacking.ngrok-free.dev',
+            'HTTP_X_FORWARDED_HOST' => 'gains-bootlace-slacking.ngrok-free.dev',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+            'HTTP_X_FORWARDED_PORT' => '443',
+            'REMOTE_ADDR' => '10.0.0.10',
+        ])
+            ->get(route('storefront.products.show', ['product' => $product], false))
+            ->assertOk()
+            ->assertSee('https://gains-bootlace-slacking.ngrok-free.dev/livewire-', false)
+            ->assertDontSee('http://gains-bootlace-slacking.ngrok-free.dev/livewire-', false);
+    }
+
+    #[Test]
     public function catalog_filters_products_by_game_slug(): void
     {
         $dota = Game::factory()->create(['name' => 'Dota 2']);
