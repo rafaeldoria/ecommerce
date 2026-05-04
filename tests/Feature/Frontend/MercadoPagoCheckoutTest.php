@@ -110,12 +110,13 @@ class MercadoPagoCheckoutTest extends TestCase
             'status' => 'approved',
             'payment_id' => '123',
             'preference_id' => 'pref_test_123',
-            'external_reference' => 'cart-test-123',
+            'external_reference' => 'payment-external-reference-123',
         ]))
             ->assertOk()
             ->assertSee('approved')
             ->assertSee('123')
             ->assertSee('pref_test_123')
-            ->assertSee('cart-test-123');
+            ->assertSee('payment-external-reference-123')
+            ->assertSee('verified server-side');
     }
 }

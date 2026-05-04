@@ -98,16 +98,16 @@ return [
         'external_reference_label' => 'External reference',
         'back_to_cart' => 'Back to cart',
         'success' => [
-            'title' => 'Payment approved in the test environment',
-            'description' => 'Mercado Pago returned a success response. At this stage, the order is not created and stock is not decremented automatically.',
+            'title' => 'Payment returned from Mercado Pago',
+            'description' => 'Mercado Pago returned the buyer to the store. The local order stays pending until the payment is verified server-side.',
         ],
         'failure' => [
-            'title' => 'Payment rejected in the test environment',
-            'description' => 'Mercado Pago returned a failure response. Use this state to validate the experience before the complete order integration.',
+            'title' => 'Payment returned with an issue',
+            'description' => 'Mercado Pago returned the buyer to the store with a failure status. The local order is not marked as paid from this browser return.',
         ],
         'pending' => [
-            'title' => 'Payment pending in the test environment',
-            'description' => 'Mercado Pago returned a pending response. Real confirmation by webhook is reserved for the next integration step.',
+            'title' => 'Payment verification is pending',
+            'description' => 'Mercado Pago returned the buyer to the store with a pending status. The local order remains pending while server-side verification is completed.',
         ],
     ],
     'content' => [

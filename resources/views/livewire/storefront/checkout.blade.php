@@ -60,6 +60,7 @@
                 <button
                     class="mt-6 inline-flex w-full items-center justify-center rounded-full bg-teal-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-teal-300 disabled:cursor-not-allowed disabled:opacity-70"
                     type="submit"
+                    @disabled($preferenceId !== null)
                     wire:loading.attr="disabled"
                     wire:target="createPreference"
                 >

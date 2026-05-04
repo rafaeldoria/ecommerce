@@ -149,7 +149,7 @@ class MercadoPagoCheckoutEnvironmentTest extends TestCase
     {
         return new CheckoutPreferenceData(
             email: 'buyer@example.com',
-            externalReference: 'cart-test-123',
+            externalReference: 'payment-external-reference-123',
             items: [
                 [
                     'id' => '10',

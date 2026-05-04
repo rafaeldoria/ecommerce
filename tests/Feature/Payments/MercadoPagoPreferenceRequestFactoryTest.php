@@ -16,7 +16,7 @@ class MercadoPagoPreferenceRequestFactoryTest extends TestCase
 
         $request = app(MercadoPagoPreferenceRequestFactory::class)->create(new CheckoutPreferenceData(
             email: 'buyer@example.com',
-            externalReference: 'cart-test-123',
+            externalReference: 'payment-external-reference-123',
             items: [
                 [
                     'id' => '10',
@@ -34,7 +34,7 @@ class MercadoPagoPreferenceRequestFactoryTest extends TestCase
         ));
 
         $this->assertSame('buyer@example.com', $request['payer']['email']);
-        $this->assertSame('cart-test-123', $request['external_reference']);
+        $this->assertSame('payment-external-reference-123', $request['external_reference']);
         $this->assertSame('GRSHOP', $request['statement_descriptor']);
         $this->assertSame('approved', $request['auto_return']);
         $this->assertFalse($request['expires']);
@@ -47,7 +47,7 @@ class MercadoPagoPreferenceRequestFactoryTest extends TestCase
     {
         $request = app(MercadoPagoPreferenceRequestFactory::class)->create(new CheckoutPreferenceData(
             email: 'buyer@example.com',
-            externalReference: 'cart-test-123',
+            externalReference: 'payment-external-reference-123',
             items: [
                 [
                     'id' => '10',

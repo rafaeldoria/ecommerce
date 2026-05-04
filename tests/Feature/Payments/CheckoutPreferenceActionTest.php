@@ -46,6 +46,7 @@ class CheckoutPreferenceActionTest extends TestCase
                     preferenceId: 'pref_test_123',
                     publicKey: 'TEST-public-key',
                     checkoutUrl: 'https://sandbox.mercadopago.test/checkout',
+                    rawProviderResponse: ['id' => 'pref_test_123'],
                 );
             }
         };
@@ -91,6 +92,10 @@ class CheckoutPreferenceActionTest extends TestCase
         $this->assertSame(PaymentStatus::Pending->value, $payment->status);
         $this->assertSame('pref_test_123', $payment->provider_preference_id);
         $this->assertSame('https://sandbox.mercadopago.test/checkout', $payment->checkout_url);
+        $this->assertSame('TEST-public-key', $payment->metadata['checkout_preference_public_key']);
+        $this->assertSame('init_point', $payment->metadata['checkout_url_strategy']);
+        $this->assertNotEmpty($payment->metadata['checkout_intent_hash']);
+        $this->assertSame(['id' => 'pref_test_123'], $payment->raw_provider_snapshot);
         $this->assertSame(279800, $payment->amount_cents);
         $this->assertSame('BRL', $payment->currency);
         $this->assertNull($payment->provider_payment_id);
@@ -103,6 +108,56 @@ class CheckoutPreferenceActionTest extends TestCase
         $this->assertSame(3, $product->refresh()->quantity);
         $this->assertCount(1, app(GetCurrentCartAction::class)->execute());
         Event::assertNotDispatched(OrderCreated::class);
+    }
+
+    #[Test]
+    public function it_reuses_a_pending_preference_for_the_same_cart_intent(): void
+    {
+        $gateway = new class implements CheckoutPreferenceGateway
+        {
+            public int $calls = 0;
+
+            public function create(CheckoutPreferenceData $data): CheckoutPreferenceResult
+            {
+                $this->calls++;
+
+                return new CheckoutPreferenceResult(
+                    preferenceId: 'pref_test_123',
+                    publicKey: 'TEST-public-key',
+                    checkoutUrl: 'https://sandbox.mercadopago.test/checkout',
+                    rawProviderResponse: ['id' => 'pref_test_123'],
+                );
+            }
+        };
+
+        $this->app->instance(CheckoutPreferenceGateway::class, $gateway);
+
+        $product = Product::factory()->create([
+            'price' => 5000,
+            'quantity' => 3,
+        ]);
+
+        app(AddToCartAction::class)->execute(new AddToCartData(
+            productId: $product->getKey(),
+            quantity: 1,
+        ));
+
+        $data = new CreateCheckoutPreferenceData(
+            email: 'buyer@example.com',
+            whatsapp: '+55 11 99999-1111',
+        );
+
+        $firstResult = app(CreateCheckoutPreferenceAction::class)->execute($data);
+        $secondResult = app(CreateCheckoutPreferenceAction::class)->execute($data);
+
+        $this->assertSame('pref_test_123', $firstResult->preferenceId);
+        $this->assertSame('pref_test_123', $secondResult->preferenceId);
+        $this->assertSame('TEST-public-key', $secondResult->publicKey);
+        $this->assertSame('https://sandbox.mercadopago.test/checkout', $secondResult->checkoutUrl);
+        $this->assertSame(1, $gateway->calls);
+        $this->assertDatabaseCount((new Order)->getTable(), 1);
+        $this->assertDatabaseCount((new Payment)->getTable(), 1);
+        $this->assertSame(2, $product->refresh()->quantity);
     }
 
     #[Test]

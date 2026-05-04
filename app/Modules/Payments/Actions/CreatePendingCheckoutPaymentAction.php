@@ -84,6 +84,7 @@ class CreatePendingCheckoutPaymentAction
                     'status' => PaymentStatus::Pending->value,
                     'metadata' => [
                         'cart_item_count' => count($cartItems),
+                        'checkout_intent_hash' => $data->checkoutIntentHash,
                     ],
                 ])
                 ->load('order.items');

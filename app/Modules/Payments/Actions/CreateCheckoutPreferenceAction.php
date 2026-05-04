@@ -2,7 +2,9 @@
 
 namespace App\Modules\Payments\Actions;
 
+use App\Modules\Cart\Actions\GetCurrentCartAction;
 use App\Modules\Catalog\Models\Product;
+use App\Modules\Orders\Enums\OrderStatus;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderItem;
 use App\Modules\Payments\Contracts\CheckoutPreferenceGateway;
@@ -10,6 +12,9 @@ use App\Modules\Payments\DTOs\CheckoutPreferenceData;
 use App\Modules\Payments\DTOs\CheckoutPreferenceResult;
 use App\Modules\Payments\DTOs\CreateCheckoutPreferenceData;
 use App\Modules\Payments\DTOs\CreatePendingCheckoutPaymentData;
+use App\Modules\Payments\Enums\PaymentProvider;
+use App\Modules\Payments\Enums\PaymentStatus;
+use App\Modules\Payments\Exceptions\PaymentConfigurationMissing;
 use App\Modules\Payments\Models\Payment;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -19,13 +24,24 @@ class CreateCheckoutPreferenceAction
     public function __construct(
         private readonly CreatePendingCheckoutPaymentAction $createPendingCheckoutPaymentAction,
         private readonly CheckoutPreferenceGateway $checkoutPreferenceGateway,
+        private readonly GetCurrentCartAction $getCurrentCartAction,
     ) {}
 
     public function execute(CreateCheckoutPreferenceData $data): CheckoutPreferenceResult
     {
+        $cartItems = $this->getCurrentCartAction->execute();
+        $checkoutIntentHash = $this->checkoutIntentHash($cartItems, $data);
+
+        $existingPayment = $this->findReusablePendingPreference($checkoutIntentHash);
+
+        if ($existingPayment !== null) {
+            return $this->preferenceResultFromPayment($existingPayment);
+        }
+
         $payment = $this->createPendingCheckoutPaymentAction->execute(new CreatePendingCheckoutPaymentData(
             email: $data->email,
             whatsapp: $data->whatsapp,
+            checkoutIntentHash: $checkoutIntentHash,
         ));
 
         try {
@@ -43,6 +59,12 @@ class CreateCheckoutPreferenceAction
             $payment->update([
                 'provider_preference_id' => $preference->preferenceId,
                 'checkout_url' => $preference->checkoutUrl,
+                'metadata' => array_merge($payment->metadata ?? [], [
+                    'checkout_intent_hash' => $checkoutIntentHash,
+                    'checkout_preference_public_key' => $preference->publicKey,
+                    'checkout_url_strategy' => (string) config('services.mercado_pago.checkout_url_strategy', 'init_point'),
+                    'preference_created_at' => now()->toISOString(),
+                ]),
                 'raw_provider_snapshot' => $preference->rawProviderResponse === []
                     ? null
                     : $preference->rawProviderResponse,
@@ -54,6 +76,61 @@ class CreateCheckoutPreferenceAction
 
             throw $exception;
         }
+    }
+
+    private function findReusablePendingPreference(string $checkoutIntentHash): ?Payment
+    {
+        /** @var Payment|null $payment */
+        $payment = Payment::query()
+            ->with('order.items')
+            ->where('provider', PaymentProvider::MercadoPago->value)
+            ->where('status', PaymentStatus::Pending->value)
+            ->whereNotNull('provider_preference_id')
+            ->where('metadata->checkout_intent_hash', $checkoutIntentHash)
+            ->whereHas('order', fn ($query) => $query->where('status', OrderStatus::PendingPayment->value))
+            ->latest('id')
+            ->first();
+
+        return $payment;
+    }
+
+    private function preferenceResultFromPayment(Payment $payment): CheckoutPreferenceResult
+    {
+        $metadata = $payment->metadata ?? [];
+        $publicKey = (string) ($metadata['checkout_preference_public_key'] ?? config('services.mercado_pago.public_key', ''));
+
+        if (trim($publicKey) === '') {
+            throw new PaymentConfigurationMissing(__('general.errors.payment_configuration_missing'));
+        }
+
+        return new CheckoutPreferenceResult(
+            preferenceId: (string) $payment->provider_preference_id,
+            publicKey: $publicKey,
+            checkoutUrl: $payment->checkout_url,
+            rawProviderResponse: $payment->raw_provider_snapshot ?? [],
+        );
+    }
+
+    /**
+     * @param  array<int, array{product_id: int, quantity: int, unit_price: int}>  $cartItems
+     */
+    private function checkoutIntentHash(array $cartItems, CreateCheckoutPreferenceData $data): string
+    {
+        $normalizedItems = collect($cartItems)
+            ->map(fn (array $item): array => [
+                'product_id' => (int) ($item['product_id'] ?? 0),
+                'quantity' => (int) ($item['quantity'] ?? 0),
+                'unit_price' => (int) ($item['unit_price'] ?? 0),
+            ])
+            ->sortBy('product_id')
+            ->values()
+            ->all();
+
+        return hash('sha256', json_encode([
+            'email' => strtolower(trim($data->email)),
+            'whatsapp' => preg_replace('/\D+/', '', $data->whatsapp) ?? '',
+            'items' => $normalizedItems,
+        ], JSON_THROW_ON_ERROR));
     }
 
     /**

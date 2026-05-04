@@ -98,16 +98,16 @@ return [
         'external_reference_label' => 'Referencia externa',
         'back_to_cart' => 'Voltar ao carrinho',
         'success' => [
-            'title' => 'Pagamento aprovado no ambiente de teste',
-            'description' => 'Recebemos o retorno de sucesso do Mercado Pago. Nesta etapa o pedido ainda nao e criado nem o estoque e baixado automaticamente.',
+            'title' => 'Pagamento retornou do Mercado Pago',
+            'description' => 'O Mercado Pago trouxe o comprador de volta para a loja. O pedido local continua pendente ate a verificacao pelo servidor.',
         ],
         'failure' => [
-            'title' => 'Pagamento recusado no ambiente de teste',
-            'description' => 'Recebemos o retorno de falha do Mercado Pago. Use este estado para validar a experiencia antes da integracao completa de pedidos.',
+            'title' => 'Pagamento retornou com problema',
+            'description' => 'O Mercado Pago trouxe o comprador de volta com status de falha. O pedido local nao e marcado como pago por esse retorno do navegador.',
         ],
         'pending' => [
-            'title' => 'Pagamento pendente no ambiente de teste',
-            'description' => 'Recebemos o retorno pendente do Mercado Pago. A confirmacao real por webhook fica para a proxima etapa da integracao.',
+            'title' => 'Verificacao do pagamento pendente',
+            'description' => 'O Mercado Pago trouxe o comprador de volta com status pendente. O pedido local continua pendente enquanto a verificacao pelo servidor e concluida.',
         ],
     ],
     'content' => [
