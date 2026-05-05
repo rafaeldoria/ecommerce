@@ -54,6 +54,7 @@ class CreateCheckoutPreferenceAction
                     'failure' => route('storefront.mercado-pago.failure'),
                     'pending' => route('storefront.mercado-pago.pending'),
                 ],
+                notificationUrl: $this->notificationUrl(),
             ));
 
             $checkoutUrl = $this->checkoutUrlOrFail($preference);
@@ -94,6 +95,13 @@ class CreateCheckoutPreferenceAction
         }
 
         return $checkoutUrl;
+    }
+
+    private function notificationUrl(): ?string
+    {
+        $notificationUrl = trim((string) config('services.mercado_pago.notification_url', ''));
+
+        return $notificationUrl === '' ? null : $notificationUrl;
     }
 
     private function findReusablePendingPreference(string $checkoutIntentHash): ?Payment

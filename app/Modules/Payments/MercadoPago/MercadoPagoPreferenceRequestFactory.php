@@ -24,6 +24,10 @@ class MercadoPagoPreferenceRequestFactory
             'expires' => false,
         ];
 
+        if ($data->notificationUrl !== null && trim($data->notificationUrl) !== '') {
+            $request['notification_url'] = trim($data->notificationUrl);
+        }
+
         if ($this->supportsAutoReturn($data->backUrls['success'])) {
             $request['auto_return'] = 'approved';
         }

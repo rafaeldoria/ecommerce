@@ -45,6 +45,9 @@ return [
         'credential_mode' => env('MERCADO_PAGO_MODE', 'test'),
         'checkout_url_strategy' => env('MERCADO_PAGO_CHECKOUT_URL_STRATEGY', 'init_point'),
         'statement_descriptor' => env('MERCADO_PAGO_STATEMENT_DESCRIPTOR', 'GRSHOP'),
+        'notification_url' => env('MERCADO_PAGO_NOTIFICATION_URL'),
+        'webhook_secret' => env('MERCADO_PAGO_WEBHOOK_SECRET'),
+        'webhook_signature_tolerance_seconds' => env('MERCADO_PAGO_WEBHOOK_SIGNATURE_TOLERANCE_SECONDS', 0),
     ],
 
 ];
