@@ -10,6 +10,7 @@ use App\Modules\Catalog\Models\Product;
 use App\Modules\Orders\Enums\OrderStatus;
 use App\Modules\Orders\Exceptions\InsufficientStock;
 use App\Modules\Orders\Models\Order;
+use App\Modules\Orders\Models\OrderItem;
 use App\Modules\Payments\DTOs\CreatePendingCheckoutPaymentData;
 use App\Modules\Payments\Enums\PaymentProvider;
 use App\Modules\Payments\Enums\PaymentStatus;
@@ -74,12 +75,14 @@ class CreatePendingCheckoutPaymentAction
                 $product->decrement('quantity', $cartItem['quantity']);
             }
 
+            $order->load('items');
+
             return Payment::query()
                 ->create([
                     'order_id' => $order->getKey(),
                     'provider' => PaymentProvider::MercadoPago->value,
                     'external_reference' => Str::uuid()->toString(),
-                    'amount_cents' => $this->amountCents($cartItems),
+                    'amount_cents' => $this->amountCents($order),
                     'currency' => 'BRL',
                     'status' => PaymentStatus::Pending->value,
                     'metadata' => [
@@ -143,15 +146,10 @@ class CreatePendingCheckoutPaymentAction
             ->keyBy('id');
     }
 
-    /**
-     * @param  array<int, array{quantity: int, unit_price: int}>  $cartItems
-     */
-    private function amountCents(array $cartItems): int
+    private function amountCents(Order $order): int
     {
-        return array_reduce(
-            $cartItems,
-            static fn (int $total, array $item): int => $total + ($item['quantity'] * $item['unit_price']),
-            0,
+        return (int) $order->items->sum(
+            static fn (OrderItem $item): int => $item->quantity * $item->unit_price,
         );
     }
 }

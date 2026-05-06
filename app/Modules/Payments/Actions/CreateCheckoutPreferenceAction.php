@@ -106,6 +106,12 @@ class CreateCheckoutPreferenceAction
 
     private function findReusablePendingPreference(string $checkoutIntentHash): ?Payment
     {
+        $reuseMinutes = (int) config('services.mercado_pago.pending_checkout_reuse_minutes', 30);
+
+        if ($reuseMinutes <= 0) {
+            return null;
+        }
+
         /** @var Payment|null $payment */
         $payment = Payment::query()
             ->with('order.items')
@@ -114,6 +120,7 @@ class CreateCheckoutPreferenceAction
             ->whereNotNull('provider_preference_id')
             ->whereNotNull('checkout_url')
             ->where('metadata->checkout_intent_hash', $checkoutIntentHash)
+            ->where('created_at', '>=', now()->subMinutes($reuseMinutes))
             ->whereHas('order', fn ($query) => $query->where('status', OrderStatus::PendingPayment->value))
             ->latest('id')
             ->first();

@@ -42,12 +42,13 @@ return [
     'mercado_pago' => [
         'access_token' => env('MERCADO_PAGO_ACCESS_TOKEN'),
         'public_key' => env('MERCADO_PAGO_PUBLIC_KEY'),
-        'credential_mode' => env('MERCADO_PAGO_MODE', 'test'),
+        'credential_mode' => env('MERCADO_PAGO_MODE', env('MERCADO_PAGO_ENV', 'test')),
         'checkout_url_strategy' => env('MERCADO_PAGO_CHECKOUT_URL_STRATEGY', 'init_point'),
         'statement_descriptor' => env('MERCADO_PAGO_STATEMENT_DESCRIPTOR', 'GRSHOP'),
         'notification_url' => env('MERCADO_PAGO_NOTIFICATION_URL'),
         'webhook_secret' => env('MERCADO_PAGO_WEBHOOK_SECRET'),
         'webhook_signature_tolerance_seconds' => env('MERCADO_PAGO_WEBHOOK_SIGNATURE_TOLERANCE_SECONDS', 0),
+        'pending_checkout_reuse_minutes' => env('MERCADO_PAGO_PENDING_CHECKOUT_REUSE_MINUTES', 30),
     ],
 
 ];
