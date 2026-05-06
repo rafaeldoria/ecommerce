@@ -3,6 +3,7 @@
 namespace Tests\Feature\Payments;
 
 use App\Modules\Cart\Actions\AddToCartAction;
+use App\Modules\Cart\Actions\ClearCartAction;
 use App\Modules\Cart\Actions\GetCurrentCartAction;
 use App\Modules\Cart\DTOs\AddToCartData;
 use App\Modules\Catalog\Models\Product;
@@ -164,6 +165,114 @@ class CheckoutPreferenceActionTest extends TestCase
         $this->assertDatabaseCount((new Order)->getTable(), 1);
         $this->assertDatabaseCount((new Payment)->getTable(), 1);
         $this->assertSame(2, $product->refresh()->quantity);
+    }
+
+    #[Test]
+    public function it_reuses_the_session_pending_preference_when_the_cart_was_cleared_after_checkout_start(): void
+    {
+        $gateway = new class implements CheckoutPreferenceGateway
+        {
+            public int $calls = 0;
+
+            public function create(CheckoutPreferenceData $data): CheckoutPreferenceResult
+            {
+                $this->calls++;
+
+                return new CheckoutPreferenceResult(
+                    preferenceId: 'pref_test_123',
+                    publicKey: 'TEST-public-key',
+                    checkoutUrl: 'https://sandbox.mercadopago.test/checkout',
+                    rawProviderResponse: ['id' => 'pref_test_123'],
+                );
+            }
+        };
+
+        $this->app->instance(CheckoutPreferenceGateway::class, $gateway);
+
+        $product = Product::factory()->create([
+            'price' => 5000,
+            'quantity' => 3,
+        ]);
+
+        app(AddToCartAction::class)->execute(new AddToCartData(
+            productId: $product->getKey(),
+            quantity: 1,
+        ));
+
+        $data = new CreateCheckoutPreferenceData(
+            email: 'buyer@example.com',
+            whatsapp: '+55 11 99999-1111',
+        );
+
+        $firstResult = app(CreateCheckoutPreferenceAction::class)->execute($data);
+        app(ClearCartAction::class)->execute();
+        $secondResult = app(CreateCheckoutPreferenceAction::class)->execute($data);
+
+        $this->assertSame('pref_test_123', $firstResult->preferenceId);
+        $this->assertSame('pref_test_123', $secondResult->preferenceId);
+        $this->assertSame(1, $gateway->calls);
+        $this->assertDatabaseCount((new Order)->getTable(), 1);
+        $this->assertDatabaseCount((new Payment)->getTable(), 1);
+        $this->assertSame(2, $product->refresh()->quantity);
+    }
+
+    #[Test]
+    public function it_does_not_reuse_the_session_pending_preference_when_the_cart_changes(): void
+    {
+        $gateway = new class implements CheckoutPreferenceGateway
+        {
+            public int $calls = 0;
+
+            public function create(CheckoutPreferenceData $data): CheckoutPreferenceResult
+            {
+                $this->calls++;
+
+                return new CheckoutPreferenceResult(
+                    preferenceId: 'pref_test_'.$this->calls,
+                    publicKey: 'TEST-public-key',
+                    checkoutUrl: 'https://sandbox.mercadopago.test/checkout/'.$this->calls,
+                    rawProviderResponse: ['id' => 'pref_test_'.$this->calls],
+                );
+            }
+        };
+
+        $this->app->instance(CheckoutPreferenceGateway::class, $gateway);
+
+        $firstProduct = Product::factory()->create([
+            'price' => 5000,
+            'quantity' => 3,
+        ]);
+        $secondProduct = Product::factory()->create([
+            'price' => 7000,
+            'quantity' => 3,
+        ]);
+
+        app(AddToCartAction::class)->execute(new AddToCartData(
+            productId: $firstProduct->getKey(),
+            quantity: 1,
+        ));
+
+        $data = new CreateCheckoutPreferenceData(
+            email: 'buyer@example.com',
+            whatsapp: '+55 11 99999-1111',
+        );
+
+        $firstResult = app(CreateCheckoutPreferenceAction::class)->execute($data);
+        app(ClearCartAction::class)->execute();
+        app(AddToCartAction::class)->execute(new AddToCartData(
+            productId: $secondProduct->getKey(),
+            quantity: 1,
+        ));
+
+        $secondResult = app(CreateCheckoutPreferenceAction::class)->execute($data);
+
+        $this->assertSame('pref_test_1', $firstResult->preferenceId);
+        $this->assertSame('pref_test_2', $secondResult->preferenceId);
+        $this->assertSame(2, $gateway->calls);
+        $this->assertDatabaseCount((new Order)->getTable(), 2);
+        $this->assertDatabaseCount((new Payment)->getTable(), 2);
+        $this->assertSame(2, $firstProduct->refresh()->quantity);
+        $this->assertSame(2, $secondProduct->refresh()->quantity);
     }
 
     #[Test]

@@ -2,7 +2,15 @@
 
 namespace Tests\Feature\Payments;
 
+use App\Modules\Catalog\Models\Product;
+use App\Modules\Orders\Enums\OrderStatus;
+use App\Modules\Orders\Models\Order;
+use App\Modules\Payments\Contracts\PaymentDetailsGateway;
+use App\Modules\Payments\DTOs\ProviderPaymentDetails;
+use App\Modules\Payments\Enums\PaymentProvider;
+use App\Modules\Payments\Enums\PaymentStatus;
 use App\Modules\Payments\Models\MercadoPagoWebhookRequest;
+use App\Modules\Payments\Models\Payment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -26,6 +34,17 @@ class MercadoPagoWebhookTest extends TestCase
     #[Test]
     public function it_accepts_a_valid_payment_webhook_and_stores_the_journal(): void
     {
+        $payment = $this->pendingPayment();
+        $this->fakeGateway(new ProviderPaymentDetails(
+            providerPaymentId: '123456',
+            externalReference: $payment->external_reference,
+            status: 'approved',
+            statusDetail: 'accredited',
+            amountCents: 10000,
+            currency: 'BRL',
+            rawProviderResponse: ['id' => '123456', 'status' => 'approved'],
+        ));
+
         $payload = $this->paymentPayload(dataId: '123456');
         $headers = $this->signedHeaders(dataId: '123456');
 
@@ -33,11 +52,11 @@ class MercadoPagoWebhookTest extends TestCase
 
         $response
             ->assertOk()
-            ->assertJsonPath('status', 'verified');
+            ->assertJsonPath('status', 'processed');
 
         $journal = MercadoPagoWebhookRequest::query()->firstOrFail();
 
-        $this->assertSame('verified', $journal->processing_status);
+        $this->assertSame('processed', $journal->processing_status);
         $this->assertSame(200, $journal->http_status_returned);
         $this->assertSame('payment', $journal->event_type);
         $this->assertSame('payment.updated', $journal->event_action);
@@ -52,7 +71,10 @@ class MercadoPagoWebhookTest extends TestCase
         $this->assertSame('123456', $journal->payload['data']['id']);
         $this->assertArrayHasKey('x-signature', $journal->headers);
         $this->assertArrayNotHasKey('authorization', $journal->headers);
+        $this->assertSame($payment->getKey(), $journal->related_payment_id);
         $this->assertNotNull($journal->processed_at);
+        $this->assertSame(OrderStatus::Paid->value, $payment->order->refresh()->status);
+        $this->assertSame(PaymentStatus::Approved->value, $payment->refresh()->status);
     }
 
     #[Test]
@@ -146,15 +168,65 @@ class MercadoPagoWebhookTest extends TestCase
     #[Test]
     public function it_accepts_the_webhook_route_without_a_csrf_token(): void
     {
+        $payment = $this->pendingPayment();
+        $this->fakeGateway(new ProviderPaymentDetails(
+            providerPaymentId: '123456',
+            externalReference: $payment->external_reference,
+            status: 'pending',
+            statusDetail: 'pending_waiting_payment',
+            amountCents: 10000,
+            currency: 'BRL',
+            rawProviderResponse: ['id' => '123456', 'status' => 'pending'],
+        ));
+
         $headers = $this->signedHeaders(dataId: '123456');
 
         $response = $this->post('/webhooks/mercado-pago?data.id=123456&type=payment', [], $headers);
 
         $response
             ->assertOk()
-            ->assertJsonPath('status', 'verified');
+            ->assertJsonPath('status', 'processed');
 
-        $this->assertSame('verified', MercadoPagoWebhookRequest::query()->firstOrFail()->processing_status);
+        $this->assertSame('processed', MercadoPagoWebhookRequest::query()->firstOrFail()->processing_status);
+    }
+
+    private function fakeGateway(ProviderPaymentDetails $details): void
+    {
+        $this->app->instance(PaymentDetailsGateway::class, new class($details) implements PaymentDetailsGateway
+        {
+            public function __construct(private readonly ProviderPaymentDetails $details) {}
+
+            public function find(string $providerPaymentId): ProviderPaymentDetails
+            {
+                return $this->details;
+            }
+        });
+    }
+
+    private function pendingPayment(): Payment
+    {
+        $product = Product::factory()->create(['quantity' => 4]);
+        $order = Order::query()->create([
+            'email' => 'buyer@example.com',
+            'whatsapp' => '+55 11 99999-1111',
+            'status' => OrderStatus::PendingPayment->value,
+        ]);
+
+        $order->items()->create([
+            'product_id' => $product->getKey(),
+            'product_name' => $product->name,
+            'unit_price' => 10000,
+            'quantity' => 1,
+        ]);
+
+        return Payment::query()->create([
+            'order_id' => $order->getKey(),
+            'provider' => PaymentProvider::MercadoPago->value,
+            'external_reference' => 'payment-reference-'.$order->getKey(),
+            'amount_cents' => 10000,
+            'currency' => 'BRL',
+            'status' => PaymentStatus::Pending->value,
+        ])->load('order.items');
     }
 
     private function signedHeaders(string $dataId, ?string $signature = null): array
