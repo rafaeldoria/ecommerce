@@ -2,44 +2,53 @@
 
 ## Wave Goal
 
-This wave hardens the Mercado Pago checkout flow after PR review feedback.
+This wave completes the verified Mercado Pago payment update path and hardens pending Checkout Pro reuse.
 
 It delivers:
 
+- a `PaymentDetailsGateway` contract for fetching full Mercado Pago payment details after a verified webhook
+- normalization of provider payment fields before local state changes
+- idempotent payment/order updates driven by fetched provider data, not browser return query params
+- amount and currency guardrails before an approved payment can mark the order paid
 - idempotent stock restoration when a payment reaches an error terminal state
 - protection against reusing a stale pending Mercado Pago preference when the current cart changed
-- regression coverage for both payment update idempotency and checkout preference reuse
+- safe reuse of the session pending preference when the cart is empty after checkout start
+- regression coverage for payment update idempotency, webhook processing, and checkout preference reuse
 
 ## Short Flow
 
 ```mermaid
 flowchart TD
-    A[Mercado Pago webhook details] --> B[ProcessMercadoPagoPaymentUpdateAction]
-    B --> C[Lock payment and order]
-    C --> D{Mapped order status}
-    D -->|completed| E[Mark order completed]
-    D -->|pending| F[Keep order pending]
-    D -->|error| G[Restore stock once]
-    G --> H[Mark internal metadata stock_restored]
+    A[Verified Mercado Pago webhook] --> B[PaymentDetailsGateway fetch]
+    B --> C[ProcessMercadoPagoPaymentUpdateAction]
+    C --> D[Lock payment and order]
+    D --> E{Mapped order status}
+    E -->|paid| F[Mark order paid]
+    E -->|pending_payment| G[Keep order pending]
+    E -->|payment_failed| H[Restore stock once]
+    H --> I[Mark payment metadata stock_restored_at]
 
-    I[Checkout submit] --> J[Read current session cart]
-    J --> K{Existing pending payment?}
-    K -->|cart empty or cart matches order| L[Reuse stored preference URL]
-    K -->|cart changed| M[Create a new pending order/payment]
+    J[Checkout submit] --> K[Read current session cart]
+    K --> L{Reusable pending payment?}
+    L -->|cart empty with session payment| M[Reuse stored preference URL]
+    L -->|cart hash matches| N[Reuse stored preference URL]
+    L -->|cart changed| O[Create a new pending order/payment]
 ```
 
 ## Main Call Direction Between Modules
 
 ### Payments
 
-- `StartPaymentCheckoutAction` now reads the current cart before deciding whether a session pending payment can be reused.
-- A pending payment can be reused only when the cart is empty or when the cart item fingerprint matches the existing order items.
-- `ProcessMercadoPagoPaymentUpdateAction` keeps status processing transaction-bound and restores stock when Mercado Pago maps to `OrderStatus::Error`.
+- `HandleMercadoPagoWebhookAction` calls the payment processor only after signature validation and only for the `payment` event.
+- `PaymentDetailsGateway` isolates the Mercado Pago `GET /v1/payments/{id}` call behind a contract.
+- `ProcessMercadoPagoPaymentUpdateAction` keeps status processing transaction-bound, matches the local payment by `external_reference`, and restores stock when Mercado Pago maps to `OrderStatus::PaymentFailed`.
+- Approved payments only mark orders as `paid` when provider amount/currency match the local payment.
+- `CreateCheckoutPreferenceAction` records the pending local payment in the session so an empty-cart retry can safely reuse the same Checkout Pro URL.
 
 ### Cart
 
 - The cart remains the source of truth for the buyer's current checkout intent.
-- If a non-empty cart matches the existing pending order, the cart is cleared when the pending preference is reused.
+- If a non-empty cart matches the existing pending checkout hash, the pending preference is reused.
 - If the cart changed, checkout creates a fresh pending order/payment instead of redirecting the buyer to an old preference.
 
 ### Catalog And Orders
@@ -57,9 +66,11 @@ own checkout and webhook-driven payment state transitions while keeping Mercado 
 
 What it does now:
 
+- fetches full Mercado Pago payment details server-side after a verified webhook
 - starts Checkout Pro from a local pending order/payment
 - reuses an existing preference only when it still represents the current cart state
-- maps approved, pending, and failed Mercado Pago statuses into local order states
+- maps approved, pending, and failed Mercado Pago statuses into local payment/order states
+- keeps the order pending if an approved provider response does not match the local amount/currency
 - restores stock once for failed/cancelled/refunded/charged-back payment outcomes
 
 ### Cart
@@ -70,7 +81,7 @@ represent the buyer's current intended purchase until checkout has a durable loc
 What it does now:
 
 - prevents stale session payment references from bypassing changed cart contents
-- is cleared after a new preference is created or after a matching pending preference is safely reused
+- can be empty after checkout redirect while the session still points to the reusable pending payment
 
 ### Orders And Catalog
 
@@ -79,7 +90,7 @@ keep stock movement explicit around order/payment state changes.
 
 What they do now:
 
-- orders keep the local fulfillment status
+- orders keep the local payment/fulfillment status
 - order items provide the stock restoration quantities
 - catalog products receive stock back exactly once when a payment terminally fails
 
@@ -88,7 +99,8 @@ What they do now:
 This wave still does not include:
 
 - automatic fulfillment after payment completion
-- refund orchestration beyond mapping refunded/charged-back statuses to an error state
+- admin payment visibility improvements beyond the local state now being updated
+- refund orchestration beyond mapping refunded/charged-back statuses to a failed payment state
 - expiration or cleanup of abandoned pending payments
 - a broader inventory reservation ledger
 - customer account history or multi-session cart reconciliation
@@ -97,6 +109,9 @@ This wave still does not include:
 
 If you want the shortest interpretation:
 
-1. a failed Mercado Pago payment no longer leaves inventory permanently reserved
-2. a stale session payment id no longer redirects a buyer to a checkout for old cart contents
-3. repeated webhooks and duplicate checkout submits remain covered by focused payment tests
+1. a verified webhook now fetches the full payment from Mercado Pago before updating the local payment/order
+2. an approved/accredited Mercado Pago payment marks the local order as `paid`
+3. an approved Mercado Pago payment with mismatched amount/currency is preserved for review instead of marking the order paid
+4. a failed Mercado Pago payment no longer leaves inventory reserved permanently
+5. a stale session payment id no longer redirects a buyer to a checkout for old cart contents
+6. repeated webhooks and duplicate checkout submits remain covered by focused payment tests

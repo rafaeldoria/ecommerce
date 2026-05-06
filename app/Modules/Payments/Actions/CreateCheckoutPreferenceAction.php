@@ -16,20 +16,34 @@ use App\Modules\Payments\Enums\PaymentProvider;
 use App\Modules\Payments\Enums\PaymentStatus;
 use App\Modules\Payments\Exceptions\PaymentConfigurationMissing;
 use App\Modules\Payments\Models\Payment;
+use Illuminate\Contracts\Session\Session;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
 class CreateCheckoutPreferenceAction
 {
+    private const PENDING_PAYMENT_SESSION_KEY = 'payments.mercado_pago.pending_payment_id';
+
     public function __construct(
         private readonly CreatePendingCheckoutPaymentAction $createPendingCheckoutPaymentAction,
         private readonly CheckoutPreferenceGateway $checkoutPreferenceGateway,
         private readonly GetCurrentCartAction $getCurrentCartAction,
+        private readonly Session $session,
     ) {}
 
     public function execute(CreateCheckoutPreferenceData $data): CheckoutPreferenceResult
     {
         $cartItems = $this->getCurrentCartAction->execute();
+
+        if ($cartItems === []) {
+            $existingPayment = $this->findReusableSessionPendingPreference();
+
+            if ($existingPayment !== null) {
+                return $this->preferenceResultFromPayment($existingPayment);
+            }
+        }
+
         $checkoutIntentHash = $this->checkoutIntentHash($cartItems, $data);
 
         $existingPayment = $this->findReusablePendingPreference($checkoutIntentHash);
@@ -73,6 +87,8 @@ class CreateCheckoutPreferenceAction
                     : $preference->rawProviderResponse,
             ]);
 
+            $this->session->put(self::PENDING_PAYMENT_SESSION_KEY, $payment->getKey());
+
             return new CheckoutPreferenceResult(
                 preferenceId: $preference->preferenceId,
                 publicKey: $preference->publicKey,
@@ -106,22 +122,9 @@ class CreateCheckoutPreferenceAction
 
     private function findReusablePendingPreference(string $checkoutIntentHash): ?Payment
     {
-        $reuseMinutes = (int) config('services.mercado_pago.pending_checkout_reuse_minutes', 30);
-
-        if ($reuseMinutes <= 0) {
-            return null;
-        }
-
         /** @var Payment|null $payment */
-        $payment = Payment::query()
-            ->with('order.items')
-            ->where('provider', PaymentProvider::MercadoPago->value)
-            ->where('status', PaymentStatus::Pending->value)
-            ->whereNotNull('provider_preference_id')
-            ->whereNotNull('checkout_url')
+        $payment = $this->reusablePendingPreferenceQuery()
             ->where('metadata->checkout_intent_hash', $checkoutIntentHash)
-            ->where('created_at', '>=', now()->subMinutes($reuseMinutes))
-            ->whereHas('order', fn ($query) => $query->where('status', OrderStatus::PendingPayment->value))
             ->latest('id')
             ->first();
 
@@ -189,6 +192,8 @@ class CreateCheckoutPreferenceAction
                 ->find($payment->order_id);
 
             if ($order === null) {
+                $this->session->forget(self::PENDING_PAYMENT_SESSION_KEY);
+
                 return;
             }
 
@@ -199,6 +204,56 @@ class CreateCheckoutPreferenceAction
             }
 
             $order->delete();
+            $this->session->forget(self::PENDING_PAYMENT_SESSION_KEY);
         });
+    }
+
+    private function findReusableSessionPendingPreference(): ?Payment
+    {
+        if (!$this->pendingPreferenceReuseEnabled()) {
+            return null;
+        }
+
+        $paymentId = $this->session->get(self::PENDING_PAYMENT_SESSION_KEY);
+
+        if (!is_int($paymentId) && !(is_string($paymentId) && ctype_digit($paymentId))) {
+            return null;
+        }
+
+        $payment = $this->reusablePendingPreferenceQuery()
+            ->whereKey((int) $paymentId)
+            ->first();
+
+        if ($payment === null) {
+            $this->session->forget(self::PENDING_PAYMENT_SESSION_KEY);
+        }
+
+        return $payment;
+    }
+
+    private function reusablePendingPreferenceQuery(): Builder
+    {
+        $reuseMinutes = (int) config('services.mercado_pago.pending_checkout_reuse_minutes', 30);
+
+        if ($reuseMinutes <= 0) {
+            return Payment::query()->whereRaw('1 = 0');
+        }
+
+        $query = Payment::query()
+            ->with('order.items')
+            ->where('provider', PaymentProvider::MercadoPago->value)
+            ->where('status', PaymentStatus::Pending->value)
+            ->whereNotNull('provider_preference_id')
+            ->whereNotNull('checkout_url')
+            ->whereHas('order', fn ($query) => $query->where('status', OrderStatus::PendingPayment->value));
+
+        $query->where('created_at', '>=', now()->subMinutes($reuseMinutes));
+
+        return $query;
+    }
+
+    private function pendingPreferenceReuseEnabled(): bool
+    {
+        return (int) config('services.mercado_pago.pending_checkout_reuse_minutes', 30) > 0;
     }
 }
