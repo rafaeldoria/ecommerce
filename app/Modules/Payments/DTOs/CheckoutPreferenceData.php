@@ -13,5 +13,6 @@ readonly class CheckoutPreferenceData
         public string $externalReference,
         public array $items,
         public array $backUrls,
+        public ?string $notificationUrl = null,
     ) {}
 }

@@ -16,7 +16,7 @@ class MercadoPagoPreferenceRequestFactoryTest extends TestCase
 
         $request = app(MercadoPagoPreferenceRequestFactory::class)->create(new CheckoutPreferenceData(
             email: 'buyer@example.com',
-            externalReference: 'cart-test-123',
+            externalReference: 'payment-external-reference-123',
             items: [
                 [
                     'id' => '10',
@@ -34,12 +34,39 @@ class MercadoPagoPreferenceRequestFactoryTest extends TestCase
         ));
 
         $this->assertSame('buyer@example.com', $request['payer']['email']);
-        $this->assertSame('cart-test-123', $request['external_reference']);
+        $this->assertSame('payment-external-reference-123', $request['external_reference']);
         $this->assertSame('GRSHOP', $request['statement_descriptor']);
         $this->assertSame('approved', $request['auto_return']);
         $this->assertFalse($request['expires']);
+        $this->assertArrayNotHasKey('notification_url', $request);
         $this->assertSame('https://store.test/success', $request['back_urls']['success']);
         $this->assertSame(25.9, $request['items'][0]['unit_price']);
+    }
+
+    #[Test]
+    public function it_includes_notification_url_when_configured_for_the_preference(): void
+    {
+        $request = app(MercadoPagoPreferenceRequestFactory::class)->create(new CheckoutPreferenceData(
+            email: 'buyer@example.com',
+            externalReference: 'payment-external-reference-123',
+            items: [
+                [
+                    'id' => '10',
+                    'title' => 'Dota 2 Item',
+                    'quantity' => 1,
+                    'unit_price' => 25.9,
+                    'currency_id' => 'BRL',
+                ],
+            ],
+            backUrls: [
+                'success' => 'https://store.test/success',
+                'failure' => 'https://store.test/failure',
+                'pending' => 'https://store.test/pending',
+            ],
+            notificationUrl: ' https://store.test/webhooks/mercado-pago ',
+        ));
+
+        $this->assertSame('https://store.test/webhooks/mercado-pago', $request['notification_url']);
     }
 
     #[Test]
@@ -47,7 +74,7 @@ class MercadoPagoPreferenceRequestFactoryTest extends TestCase
     {
         $request = app(MercadoPagoPreferenceRequestFactory::class)->create(new CheckoutPreferenceData(
             email: 'buyer@example.com',
-            externalReference: 'cart-test-123',
+            externalReference: 'payment-external-reference-123',
             items: [
                 [
                     'id' => '10',
@@ -65,5 +92,34 @@ class MercadoPagoPreferenceRequestFactoryTest extends TestCase
         ));
 
         $this->assertArrayNotHasKey('auto_return', $request);
+    }
+
+    #[Test]
+    public function it_enables_auto_return_for_the_public_https_return_url(): void
+    {
+        $request = app(MercadoPagoPreferenceRequestFactory::class)->create(new CheckoutPreferenceData(
+            email: 'buyer@example.com',
+            externalReference: 'payment-external-reference-123',
+            items: [
+                [
+                    'id' => '10',
+                    'title' => 'Dota 2 Item',
+                    'quantity' => 1,
+                    'unit_price' => 25.9,
+                    'currency_id' => 'BRL',
+                ],
+            ],
+            backUrls: [
+                'success' => 'https://gains-bootlace-slacking.ngrok-free.dev/checkout/mercado-pago/success',
+                'failure' => 'https://gains-bootlace-slacking.ngrok-free.dev/checkout/mercado-pago/failure',
+                'pending' => 'https://gains-bootlace-slacking.ngrok-free.dev/checkout/mercado-pago/pending',
+            ],
+        ));
+
+        $this->assertSame(
+            'https://gains-bootlace-slacking.ngrok-free.dev/checkout/mercado-pago/success',
+            $request['back_urls']['success'],
+        );
+        $this->assertSame('approved', $request['auto_return']);
     }
 }

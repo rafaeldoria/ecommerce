@@ -8,5 +8,6 @@ readonly class CheckoutPreferenceResult
         public string $preferenceId,
         public string $publicKey,
         public ?string $checkoutUrl,
+        public array $rawProviderResponse = [],
     ) {}
 }

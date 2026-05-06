@@ -7,10 +7,13 @@ use App\Modules\Cart\Actions\AddToCartAction;
 use App\Modules\Cart\Actions\GetCurrentCartAction;
 use App\Modules\Cart\DTOs\AddToCartData;
 use App\Modules\Catalog\Models\Product;
+use App\Modules\Orders\Enums\OrderStatus;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Payments\Contracts\CheckoutPreferenceGateway;
 use App\Modules\Payments\DTOs\CheckoutPreferenceData;
 use App\Modules\Payments\DTOs\CheckoutPreferenceResult;
+use App\Modules\Payments\Enums\PaymentStatus;
+use App\Modules\Payments\Models\Payment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\Test;
@@ -33,7 +36,7 @@ class MercadoPagoCheckoutTest extends TestCase
         Livewire::test(Checkout::class)
             ->set('email', 'buyer@example.com')
             ->set('whatsapp', '+55 11 99999-1111')
-            ->call('createPreference')
+            ->call('pay')
             ->assertHasErrors(['checkout']);
     }
 
@@ -45,12 +48,12 @@ class MercadoPagoCheckoutTest extends TestCase
         Livewire::test(Checkout::class)
             ->set('email', 'invalid-email')
             ->set('whatsapp', '123')
-            ->call('createPreference')
+            ->call('pay')
             ->assertHasErrors(['email', 'whatsapp']);
     }
 
     #[Test]
-    public function checkout_renders_the_wallet_container_after_creating_a_preference_without_touching_orders_or_stock(): void
+    public function checkout_redirects_to_mercado_pago_after_creating_pending_order_and_payment(): void
     {
         $this->app->bind(CheckoutPreferenceGateway::class, fn () => new class implements CheckoutPreferenceGateway
         {
@@ -67,7 +70,7 @@ class MercadoPagoCheckoutTest extends TestCase
         $product = Product::factory()->create([
             'name' => 'AK-47 Redline',
             'price' => 2590,
-            'quantity' => 4,
+            'quantity' => 1,
         ]);
 
         app(AddToCartAction::class)->execute(new AddToCartData(
@@ -79,18 +82,26 @@ class MercadoPagoCheckoutTest extends TestCase
             ->assertSee('AK-47 Redline')
             ->set('email', 'buyer@example.com')
             ->set('whatsapp', '+55 11 99999-1111')
-            ->call('createPreference')
+            ->call('pay')
             ->assertHasNoErrors()
-            ->assertSet('preferenceId', 'pref_test_123')
-            ->assertSet('publicKey', 'TEST-public-key')
-            ->assertSee('walletBrick_container', false);
+            ->assertRedirect('https://sandbox.mercadopago.test/checkout');
 
         $checkoutView = file_get_contents(resource_path('views/livewire/storefront/checkout.blade.php'));
 
-        $this->assertStringContainsString("\$wire.\$on('mercado-pago-preference-created'", (string) $checkoutView);
-        $this->assertDatabaseCount((new Order)->getTable(), 0);
-        $this->assertSame(4, $product->refresh()->quantity);
-        $this->assertCount(1, app(GetCurrentCartAction::class)->execute());
+        $this->assertStringNotContainsString('walletBrick_container', (string) $checkoutView);
+        $this->assertStringNotContainsString('mercado-pago-preference-created', (string) $checkoutView);
+        $this->assertStringNotContainsString('sdk.mercadopago.com/js/v2', (string) $checkoutView);
+
+        $order = Order::query()->firstOrFail();
+        $payment = Payment::query()->firstOrFail();
+
+        $this->assertSame(OrderStatus::PendingPayment->value, $order->status);
+        $this->assertSame($order->getKey(), $payment->order_id);
+        $this->assertSame(PaymentStatus::Pending->value, $payment->status);
+        $this->assertSame('pref_test_123', $payment->provider_preference_id);
+        $this->assertSame(2590, $payment->amount_cents);
+        $this->assertSame(0, $product->refresh()->quantity);
+        $this->assertSame([], app(GetCurrentCartAction::class)->execute());
     }
 
     #[Test]
@@ -100,12 +111,13 @@ class MercadoPagoCheckoutTest extends TestCase
             'status' => 'approved',
             'payment_id' => '123',
             'preference_id' => 'pref_test_123',
-            'external_reference' => 'cart-test-123',
+            'external_reference' => 'payment-external-reference-123',
         ]))
             ->assertOk()
             ->assertSee('approved')
             ->assertSee('123')
             ->assertSee('pref_test_123')
-            ->assertSee('cart-test-123');
+            ->assertSee('payment-external-reference-123')
+            ->assertSee('verified server-side');
     }
 }

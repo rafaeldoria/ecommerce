@@ -3,7 +3,7 @@
 namespace Tests\Feature\Api\Admin;
 
 use App\Modules\Catalog\Models\Product;
-use App\Modules\Orders\Models\Order;
+use App\Modules\Orders\Enums\OrderStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -43,7 +43,7 @@ class OrdersApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('message', __('general.api.admin.orders.retrieved'))
             ->assertJsonPath('data.id', $orderId)
-            ->assertJsonPath('data.status', Order::STATUS_PENDING_FULFILLMENT)
+            ->assertJsonPath('data.status', OrderStatus::PendingFulfillment->value)
             ->assertJsonPath('data.total_amount', 319800)
             ->assertJsonPath('data.items.0.quantity', 2);
     }

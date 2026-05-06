@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Webhooks\MercadoPagoWebhookController;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
 use App\Livewire\Admin\Games as AdminGames;
 use App\Livewire\Admin\Games\Edit as AdminGamesEdit;
@@ -42,6 +43,8 @@ Route::view('/checkout/mercado-pago/pending', 'storefront.mercado-pago-return', 
 Route::get('/about', About::class)->name('storefront.about');
 Route::get('/contact', Contact::class)->name('storefront.contact');
 Route::get('/faq', Faq::class)->name('storefront.faq');
+Route::post('/webhooks/mercado-pago', MercadoPagoWebhookController::class)
+    ->name('webhooks.mercado-pago');
 Route::get('/locale/{locale}', function (Request $request, string $locale): RedirectResponse {
     abort_unless(in_array($locale, ['en', 'pt-BR'], true), 404);
 

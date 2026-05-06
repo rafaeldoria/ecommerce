@@ -1,29 +1,32 @@
 <?php
 
-namespace App\Modules\Orders\Actions;
+namespace App\Modules\Payments\Actions;
 
-use App\Modules\Cart\Actions\ClearCartAction;
 use App\Modules\Cart\Actions\GetCurrentCartAction;
 use App\Modules\Cart\Exceptions\EmptyCart;
 use App\Modules\Cart\Exceptions\InvalidCartQuantity;
 use App\Modules\Cart\Exceptions\InvalidProductReference;
 use App\Modules\Catalog\Models\Product;
-use App\Modules\Orders\DTOs\CreateOrderData;
 use App\Modules\Orders\Enums\OrderStatus;
-use App\Modules\Orders\Events\OrderCreated;
 use App\Modules\Orders\Exceptions\InsufficientStock;
-use App\Modules\Orders\Exceptions\InvalidOrderContact;
 use App\Modules\Orders\Models\Order;
+use App\Modules\Orders\Models\OrderItem;
+use App\Modules\Payments\DTOs\CreatePendingCheckoutPaymentData;
+use App\Modules\Payments\Enums\PaymentProvider;
+use App\Modules\Payments\Enums\PaymentStatus;
+use App\Modules\Payments\Exceptions\InvalidCheckoutContact;
+use App\Modules\Payments\Models\Payment;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
-class CreateOrderAction
+class CreatePendingCheckoutPaymentAction
 {
     public function __construct(
         private readonly GetCurrentCartAction $getCurrentCartAction,
-        private readonly ClearCartAction $clearCartAction,
     ) {}
 
-    public function execute(CreateOrderData $data): Order
+    public function execute(CreatePendingCheckoutPaymentData $data): Payment
     {
         $this->guardContact($data);
 
@@ -35,18 +38,8 @@ class CreateOrderAction
 
         $this->guardCartItems($cartItems);
 
-        $order = DB::transaction(function () use ($cartItems, $data): Order {
-            $productIds = array_map(
-                static fn (array $item): int => $item['product_id'],
-                $cartItems,
-            );
-
-            $products = Product::query()
-                ->whereIn('id', $productIds)
-                ->whereNull('deleted_at')
-                ->lockForUpdate()
-                ->get()
-                ->keyBy('id');
+        return DB::transaction(function () use ($cartItems, $data): Payment {
+            $products = $this->lockCartProducts($cartItems);
 
             foreach ($cartItems as $cartItem) {
                 $product = $products->get($cartItem['product_id']);
@@ -65,7 +58,7 @@ class CreateOrderAction
             $order = Order::query()->create([
                 'email' => $data->email,
                 'whatsapp' => $data->whatsapp,
-                'status' => OrderStatus::PendingFulfillment->value,
+                'status' => OrderStatus::PendingPayment->value,
             ]);
 
             foreach ($cartItems as $cartItem) {
@@ -82,13 +75,23 @@ class CreateOrderAction
                 $product->decrement('quantity', $cartItem['quantity']);
             }
 
-            return $order->load('items');
+            $order->load('items');
+
+            return Payment::query()
+                ->create([
+                    'order_id' => $order->getKey(),
+                    'provider' => PaymentProvider::MercadoPago->value,
+                    'external_reference' => Str::uuid()->toString(),
+                    'amount_cents' => $this->amountCents($order),
+                    'currency' => 'BRL',
+                    'status' => PaymentStatus::Pending->value,
+                    'metadata' => [
+                        'cart_item_count' => count($cartItems),
+                        'checkout_intent_hash' => $data->checkoutIntentHash,
+                    ],
+                ])
+                ->load('order.items');
         });
-
-        $this->clearCartAction->execute();
-        event(new OrderCreated($order));
-
-        return $order;
     }
 
     private function guardCartItems(array $cartItems): void
@@ -96,6 +99,7 @@ class CreateOrderAction
         foreach ($cartItems as $cartItem) {
             $productId = $cartItem['product_id'] ?? null;
             $quantity = $cartItem['quantity'] ?? null;
+            $unitPrice = $cartItem['unit_price'] ?? null;
 
             if (!is_int($productId) || $productId <= 0) {
                 throw new InvalidProductReference(__('general.errors.invalid_product_reference'));
@@ -104,19 +108,48 @@ class CreateOrderAction
             if (!is_int($quantity) || $quantity <= 0) {
                 throw new InvalidCartQuantity(__('general.errors.invalid_cart_quantity'));
             }
+
+            if (!is_int($unitPrice) || $unitPrice < 0) {
+                throw new InvalidCartQuantity(__('general.errors.invalid_cart_quantity'));
+            }
         }
     }
 
-    private function guardContact(CreateOrderData $data): void
+    private function guardContact(CreatePendingCheckoutPaymentData $data): void
     {
         if (!filter_var($data->email, FILTER_VALIDATE_EMAIL)) {
-            throw new InvalidOrderContact(__('general.errors.invalid_order_email'));
+            throw new InvalidCheckoutContact(__('general.errors.invalid_order_email'));
         }
 
         $normalizedWhatsapp = preg_replace('/\D+/', '', $data->whatsapp) ?? '';
 
         if ($normalizedWhatsapp === '' || strlen($normalizedWhatsapp) < 10 || strlen($normalizedWhatsapp) > 15) {
-            throw new InvalidOrderContact(__('general.errors.invalid_order_whatsapp'));
+            throw new InvalidCheckoutContact(__('general.errors.invalid_order_whatsapp'));
         }
+    }
+
+    /**
+     * @param  array<int, array{product_id: int, quantity: int}>  $cartItems
+     */
+    private function lockCartProducts(array $cartItems): Collection
+    {
+        $productIds = array_map(
+            static fn (array $item): int => $item['product_id'],
+            $cartItems,
+        );
+
+        return Product::query()
+            ->whereIn('id', $productIds)
+            ->whereNull('deleted_at')
+            ->lockForUpdate()
+            ->get()
+            ->keyBy('id');
+    }
+
+    private function amountCents(Order $order): int
+    {
+        return (int) $order->items->sum(
+            static fn (OrderItem $item): int => $item->quantity * $item->unit_price,
+        );
     }
 }
