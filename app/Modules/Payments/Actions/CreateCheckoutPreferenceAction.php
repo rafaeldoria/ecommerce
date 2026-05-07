@@ -37,7 +37,7 @@ class CreateCheckoutPreferenceAction
         $cartItems = $this->getCurrentCartAction->execute();
 
         if ($cartItems === []) {
-            $existingPayment = $this->findReusableSessionPendingPreference();
+            $existingPayment = $this->findReusableSessionPendingPreference($data);
 
             if ($existingPayment !== null) {
                 return $this->preferenceResultFromPayment($existingPayment);
@@ -78,6 +78,8 @@ class CreateCheckoutPreferenceAction
                 'checkout_url' => $checkoutUrl,
                 'metadata' => array_merge($payment->metadata ?? [], [
                     'checkout_intent_hash' => $checkoutIntentHash,
+                    'checkout_contact_email' => $this->normalizedEmail($data->email),
+                    'checkout_contact_whatsapp' => $this->normalizedWhatsapp($data->whatsapp),
                     'checkout_preference_public_key' => $preference->publicKey,
                     'checkout_url_strategy' => (string) config('services.mercado_pago.checkout_url_strategy', 'init_point'),
                     'preference_created_at' => now()->toISOString(),
@@ -160,8 +162,8 @@ class CreateCheckoutPreferenceAction
             ->all();
 
         return hash('sha256', json_encode([
-            'email' => strtolower(trim($data->email)),
-            'whatsapp' => preg_replace('/\D+/', '', $data->whatsapp) ?? '',
+            'email' => $this->normalizedEmail($data->email),
+            'whatsapp' => $this->normalizedWhatsapp($data->whatsapp),
             'items' => $normalizedItems,
         ], JSON_THROW_ON_ERROR));
     }
@@ -208,7 +210,7 @@ class CreateCheckoutPreferenceAction
         });
     }
 
-    private function findReusableSessionPendingPreference(): ?Payment
+    private function findReusableSessionPendingPreference(CreateCheckoutPreferenceData $data): ?Payment
     {
         if (!$this->pendingPreferenceReuseEnabled()) {
             return null;
@@ -226,9 +228,25 @@ class CreateCheckoutPreferenceAction
 
         if ($payment === null) {
             $this->session->forget(self::PENDING_PAYMENT_SESSION_KEY);
+
+            return null;
+        }
+
+        if (!$this->paymentContactMatchesCheckoutIntent($payment, $data)) {
+            $this->session->forget(self::PENDING_PAYMENT_SESSION_KEY);
+
+            return null;
         }
 
         return $payment;
+    }
+
+    private function paymentContactMatchesCheckoutIntent(Payment $payment, CreateCheckoutPreferenceData $data): bool
+    {
+        $metadata = $payment->metadata ?? [];
+
+        return ($metadata['checkout_contact_email'] ?? null) === $this->normalizedEmail($data->email)
+            && ($metadata['checkout_contact_whatsapp'] ?? null) === $this->normalizedWhatsapp($data->whatsapp);
     }
 
     private function reusablePendingPreferenceQuery(): Builder
@@ -255,5 +273,15 @@ class CreateCheckoutPreferenceAction
     private function pendingPreferenceReuseEnabled(): bool
     {
         return (int) config('services.mercado_pago.pending_checkout_reuse_minutes', 30) > 0;
+    }
+
+    private function normalizedEmail(string $email): string
+    {
+        return strtolower(trim($email));
+    }
+
+    private function normalizedWhatsapp(string $whatsapp): string
+    {
+        return preg_replace('/\D+/', '', $whatsapp) ?? '';
     }
 }

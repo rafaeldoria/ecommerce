@@ -6,6 +6,7 @@ use App\Modules\Cart\Actions\AddToCartAction;
 use App\Modules\Cart\Actions\ClearCartAction;
 use App\Modules\Cart\Actions\GetCurrentCartAction;
 use App\Modules\Cart\DTOs\AddToCartData;
+use App\Modules\Cart\Exceptions\EmptyCart;
 use App\Modules\Catalog\Models\Product;
 use App\Modules\Orders\Enums\OrderStatus;
 use App\Modules\Orders\Events\OrderCreated;
@@ -214,6 +215,61 @@ class CheckoutPreferenceActionTest extends TestCase
         $this->assertDatabaseCount((new Order)->getTable(), 1);
         $this->assertDatabaseCount((new Payment)->getTable(), 1);
         $this->assertSame(2, $product->refresh()->quantity);
+    }
+
+    #[Test]
+    public function it_does_not_reuse_the_session_pending_preference_when_checkout_contact_changes(): void
+    {
+        $gateway = new class implements CheckoutPreferenceGateway
+        {
+            public int $calls = 0;
+
+            public function create(CheckoutPreferenceData $data): CheckoutPreferenceResult
+            {
+                $this->calls++;
+
+                return new CheckoutPreferenceResult(
+                    preferenceId: 'pref_test_123',
+                    publicKey: 'TEST-public-key',
+                    checkoutUrl: 'https://sandbox.mercadopago.test/checkout',
+                    rawProviderResponse: ['id' => 'pref_test_123'],
+                );
+            }
+        };
+
+        $this->app->instance(CheckoutPreferenceGateway::class, $gateway);
+
+        $product = Product::factory()->create([
+            'price' => 5000,
+            'quantity' => 3,
+        ]);
+
+        app(AddToCartAction::class)->execute(new AddToCartData(
+            productId: $product->getKey(),
+            quantity: 1,
+        ));
+
+        app(CreateCheckoutPreferenceAction::class)->execute(new CreateCheckoutPreferenceData(
+            email: 'buyer@example.com',
+            whatsapp: '+55 11 99999-1111',
+        ));
+
+        app(ClearCartAction::class)->execute();
+
+        try {
+            app(CreateCheckoutPreferenceAction::class)->execute(new CreateCheckoutPreferenceData(
+                email: 'other-buyer@example.com',
+                whatsapp: '+55 11 98888-2222',
+            ));
+
+            $this->fail('Empty cart should prevent creating a new preference for changed contact.');
+        } catch (EmptyCart) {
+            $this->assertSame(1, $gateway->calls);
+            $this->assertDatabaseCount((new Order)->getTable(), 1);
+            $this->assertDatabaseCount((new Payment)->getTable(), 1);
+            $this->assertSame(2, $product->refresh()->quantity);
+            $this->assertNull(session('payments.mercado_pago.pending_payment_id'));
+        }
     }
 
     #[Test]
