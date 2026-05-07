@@ -118,6 +118,7 @@ class MercadoPagoCheckoutTest extends TestCase
             ->assertSee('123')
             ->assertSee('pref_test_123')
             ->assertSee('payment-external-reference-123')
-            ->assertSee('verified server-side');
+            ->assertSee('verified server-side')
+            ->assertSee('local order stays pending');
     }
 }
