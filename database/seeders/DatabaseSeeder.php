@@ -45,7 +45,7 @@ class DatabaseSeeder extends Seeder
         $covert = Rarity::query()->firstOrCreate(['name' => 'Covert']);
         $classified = Rarity::query()->firstOrCreate(['name' => 'Classified']);
 
-        $this->seedDemoProducts($dota, [
+        $this->seedStarterProducts($dota, [
             ['name' => 'Phantom Assassin Arcana', 'price' => 139900, 'rarity_id' => $arcana->id, 'quantity' => 3, 'accent' => '#14b8a6'],
             ['name' => 'Pudge Dragonclaw Hook', 'price' => 189900, 'rarity_id' => $immortal->id, 'quantity' => 2, 'accent' => '#f97316'],
             ['name' => 'Invoker Dark Artistry Set', 'price' => 124500, 'rarity_id' => $arcana->id, 'quantity' => 4, 'accent' => '#8b5cf6'],
@@ -53,7 +53,7 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Rubick Magus Cypher Bundle', 'price' => 97900, 'rarity_id' => $immortal->id, 'quantity' => 6, 'accent' => '#22c55e'],
         ]);
 
-        $this->seedDemoProducts($cs2, [
+        $this->seedStarterProducts($cs2, [
             ['name' => 'AK-47 Neon Rider', 'price' => 84500, 'rarity_id' => $covert->id, 'quantity' => 7, 'accent' => '#06b6d4'],
             ['name' => 'AWP Asiimov', 'price' => 162900, 'rarity_id' => $covert->id, 'quantity' => 2, 'accent' => '#f97316'],
             ['name' => 'Butterfly Knife Doppler', 'price' => 259900, 'rarity_id' => $classified->id, 'quantity' => 1, 'accent' => '#a855f7'],
@@ -65,7 +65,7 @@ class DatabaseSeeder extends Seeder
     /**
      * @param  array<int, array{name: string, price: int, rarity_id: int, quantity: int, accent: string}>  $products
      */
-    private function seedDemoProducts(Game $game, array $products): void
+    private function seedStarterProducts(Game $game, array $products): void
     {
         foreach ($products as $product) {
             Product::query()->updateOrCreate([

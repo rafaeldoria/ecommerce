@@ -83,6 +83,8 @@ return [
         'rarity_label' => 'Rarity',
         'select_game' => 'Select a game',
         'select_rarity' => 'Select a rarity',
+        'filter_game_label' => 'Filter by game',
+        'filter_all_games' => 'All games',
         'empty_state' => 'No products yet. Create the first product with an image, game, rarity, price, and stock.',
         'messages' => [
             'created' => 'Product created.',
@@ -112,6 +114,7 @@ return [
         'fulfillment_blocked' => 'Wait for verified payment',
         'no_webhook_journal' => 'No webhook journal yet',
         'no_payment_recorded' => 'No local payment is recorded for this order yet.',
+        'open_detail' => 'Open details',
     ],
     'tables' => [
         'id' => 'ID',

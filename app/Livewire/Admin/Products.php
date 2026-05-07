@@ -16,6 +16,7 @@ use App\Modules\Catalog\Queries\ListAdminRaritiesQuery;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\WithFileUploads;
 use Livewire\WithPagination;
@@ -40,6 +41,9 @@ class Products extends Component
 
     public int|string|null $rarity_id = null;
 
+    #[Url(as: 'game', except: '')]
+    public int|string|null $selectedGameId = null;
+
     public ?int $confirmingDeleteProductId = null;
 
     public bool $isFormOpen = false;
@@ -54,7 +58,7 @@ class Products extends Component
         ListAdminRaritiesQuery $listAdminRaritiesQuery,
     ) {
         return $this->pageView('livewire.admin.products', [
-            'products' => $listAdminProductsQuery->executePaginated(10),
+            'products' => $listAdminProductsQuery->executePaginated(10, $this->normalizedSelectedGameId()),
             'games' => $listAdminGamesQuery->execute(),
             'rarities' => $listAdminRaritiesQuery->execute(),
         ]);
@@ -102,6 +106,11 @@ class Products extends Component
     {
         $this->resetForm();
         $this->clearStatus();
+    }
+
+    public function updatedSelectedGameId(): void
+    {
+        $this->resetPage();
     }
 
     protected function titleKey(): string
@@ -184,5 +193,20 @@ class Products extends Component
     {
         $this->statusMessage = null;
         $this->statusTone = 'success';
+    }
+
+    private function normalizedSelectedGameId(): ?int
+    {
+        if ($this->selectedGameId === null || $this->selectedGameId === '') {
+            return null;
+        }
+
+        if (!is_int($this->selectedGameId) && !ctype_digit((string) $this->selectedGameId)) {
+            return null;
+        }
+
+        $gameId = (int) $this->selectedGameId;
+
+        return $gameId > 0 ? $gameId : null;
     }
 }

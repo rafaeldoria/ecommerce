@@ -3,10 +3,7 @@
 namespace App\Livewire\Admin;
 
 use App\Livewire\Concerns\UsesLocalizedPageTitle;
-use App\Modules\Catalog\Models\Game;
-use App\Modules\Catalog\Models\Product;
-use App\Modules\Catalog\Models\Rarity;
-use App\Modules\Orders\Models\Order;
+use App\Modules\Admin\Queries\GetAdminDashboardStatsQuery;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -17,14 +14,9 @@ class Dashboard extends Component
 
     public array $stats = [];
 
-    public function render()
+    public function render(GetAdminDashboardStatsQuery $getAdminDashboardStatsQuery)
     {
-        $this->stats = [
-            'games' => Game::query()->count(),
-            'rarities' => Rarity::query()->count(),
-            'products' => Product::query()->count(),
-            'orders' => Order::query()->count(),
-        ];
+        $this->stats = $getAdminDashboardStatsQuery->execute();
 
         return $this->pageView('livewire.admin.dashboard');
     }

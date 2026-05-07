@@ -165,6 +165,20 @@
         </form>
     @endif
 
+    <div class="rounded-lg border border-zinc-800 bg-zinc-900/70 p-4">
+        <label class="text-sm font-medium text-zinc-200" for="products-game-filter">{{ __('admin.products.filter_game_label') }}</label>
+        <select
+            id="products-game-filter"
+            class="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-white outline-none transition focus:border-emerald-400 sm:max-w-xs"
+            wire:model.live="selectedGameId"
+        >
+            <option value="">{{ __('admin.products.filter_all_games') }}</option>
+            @foreach ($games as $game)
+                <option value="{{ $game->id }}">{{ $game->name }}</option>
+            @endforeach
+        </select>
+    </div>
+
     <div class="overflow-x-auto rounded-lg border border-zinc-800 bg-zinc-900/70">
         <table class="min-w-full divide-y divide-zinc-800">
             <thead class="bg-zinc-950/70">

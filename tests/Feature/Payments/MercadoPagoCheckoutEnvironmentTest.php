@@ -5,10 +5,13 @@ namespace Tests\Feature\Payments;
 use App\Modules\Payments\DTOs\CheckoutPreferenceData;
 use App\Modules\Payments\Exceptions\PaymentConfigurationMissing;
 use App\Modules\Payments\MercadoPago\MercadoPagoCheckoutPreferenceGateway;
+use App\Modules\Payments\MercadoPago\MercadoPagoPaymentDetailsGateway;
 use App\Modules\Payments\MercadoPago\MercadoPagoPreferenceClient;
 use MercadoPago\MercadoPagoConfig;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Http;
 
 class MercadoPagoCheckoutEnvironmentTest extends TestCase
 {
@@ -124,6 +127,35 @@ class MercadoPagoCheckoutEnvironmentTest extends TestCase
         $this->expectException(PaymentConfigurationMissing::class);
 
         app(MercadoPagoCheckoutPreferenceGateway::class)->create($this->preferenceData());
+    }
+
+    #[Test]
+    public function payment_details_gateway_uses_the_configured_api_base_url(): void
+    {
+        config([
+            'services.mercado_pago.access_token' => 'TEST-access-token',
+            'apis.mercado_pago.base_url' => 'https://mercado-pago-api.test',
+        ]);
+
+        Http::fake([
+            'https://mercado-pago-api.test/v1/payments/payment-123' => Http::response([
+                'id' => 'payment-123',
+                'external_reference' => 'external-reference-123',
+                'status' => 'approved',
+                'status_detail' => 'accredited',
+                'transaction_amount' => 25.9,
+                'currency_id' => 'BRL',
+            ]),
+        ]);
+
+        $details = app(MercadoPagoPaymentDetailsGateway::class)->find('payment-123');
+
+        $this->assertSame('payment-123', $details->providerPaymentId);
+        $this->assertSame('external-reference-123', $details->externalReference);
+        $this->assertSame(2590, $details->amountCents);
+
+        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://mercado-pago-api.test/v1/payments/payment-123'
+            && $request->hasHeader('Authorization', 'Bearer TEST-access-token'));
     }
 
     private function fakePreferenceClient(): MercadoPagoPreferenceClient

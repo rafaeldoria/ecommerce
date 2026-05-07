@@ -16,11 +16,16 @@ class ListAdminProductsQuery
             ->get();
     }
 
-    public function executePaginated(int $perPage = 10): LengthAwarePaginator
+    public function executePaginated(int $perPage = 10, ?int $gameId = null): LengthAwarePaginator
     {
-        return Product::query()
+        $query = Product::query()
             ->with(['game:id,name', 'rarity:id,name'])
-            ->orderBy('name')
-            ->paginate($perPage);
+            ->orderBy('name');
+
+        if ($gameId !== null) {
+            $query->where('game_id', $gameId);
+        }
+
+        return $query->paginate($perPage)->withQueryString();
     }
 }

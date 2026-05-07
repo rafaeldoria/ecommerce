@@ -4,7 +4,6 @@ namespace App\Modules\Payments\Actions;
 
 use App\Modules\Cart\Actions\GetCurrentCartAction;
 use App\Modules\Catalog\Models\Product;
-use App\Modules\Orders\Enums\OrderStatus;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderItem;
 use App\Modules\Payments\Contracts\CheckoutPreferenceGateway;
@@ -12,12 +11,10 @@ use App\Modules\Payments\DTOs\CheckoutPreferenceData;
 use App\Modules\Payments\DTOs\CheckoutPreferenceResult;
 use App\Modules\Payments\DTOs\CreateCheckoutPreferenceData;
 use App\Modules\Payments\DTOs\CreatePendingCheckoutPaymentData;
-use App\Modules\Payments\Enums\PaymentProvider;
-use App\Modules\Payments\Enums\PaymentStatus;
 use App\Modules\Payments\Exceptions\PaymentConfigurationMissing;
 use App\Modules\Payments\Models\Payment;
+use App\Modules\Payments\Queries\ReusablePendingMercadoPagoPreferenceQuery;
 use Illuminate\Contracts\Session\Session;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
@@ -29,6 +26,7 @@ class CreateCheckoutPreferenceAction
         private readonly CreatePendingCheckoutPaymentAction $createPendingCheckoutPaymentAction,
         private readonly CheckoutPreferenceGateway $checkoutPreferenceGateway,
         private readonly GetCurrentCartAction $getCurrentCartAction,
+        private readonly ReusablePendingMercadoPagoPreferenceQuery $reusablePendingPreferenceQuery,
         private readonly Session $session,
     ) {}
 
@@ -124,13 +122,7 @@ class CreateCheckoutPreferenceAction
 
     private function findReusablePendingPreference(string $checkoutIntentHash): ?Payment
     {
-        /** @var Payment|null $payment */
-        $payment = $this->reusablePendingPreferenceQuery()
-            ->where('metadata->checkout_intent_hash', $checkoutIntentHash)
-            ->latest('id')
-            ->first();
-
-        return $payment;
+        return $this->reusablePendingPreferenceQuery->findByCheckoutIntentHash($checkoutIntentHash);
     }
 
     private function preferenceResultFromPayment(Payment $payment): CheckoutPreferenceResult
@@ -222,9 +214,7 @@ class CreateCheckoutPreferenceAction
             return null;
         }
 
-        $payment = $this->reusablePendingPreferenceQuery()
-            ->whereKey((int) $paymentId)
-            ->first();
+        $payment = $this->reusablePendingPreferenceQuery->findByPaymentId((int) $paymentId);
 
         if ($payment === null) {
             $this->session->forget(self::PENDING_PAYMENT_SESSION_KEY);
@@ -249,30 +239,9 @@ class CreateCheckoutPreferenceAction
             && ($metadata['checkout_contact_whatsapp'] ?? null) === $this->normalizedWhatsapp($data->whatsapp);
     }
 
-    private function reusablePendingPreferenceQuery(): Builder
-    {
-        $reuseMinutes = (int) config('services.mercado_pago.pending_checkout_reuse_minutes', 30);
-
-        if ($reuseMinutes <= 0) {
-            return Payment::query()->whereRaw('1 = 0');
-        }
-
-        $query = Payment::query()
-            ->with('order.items')
-            ->where('provider', PaymentProvider::MercadoPago->value)
-            ->where('status', PaymentStatus::Pending->value)
-            ->whereNotNull('provider_preference_id')
-            ->whereNotNull('checkout_url')
-            ->whereHas('order', fn ($query) => $query->where('status', OrderStatus::PendingPayment->value));
-
-        $query->where('created_at', '>=', now()->subMinutes($reuseMinutes));
-
-        return $query;
-    }
-
     private function pendingPreferenceReuseEnabled(): bool
     {
-        return (int) config('services.mercado_pago.pending_checkout_reuse_minutes', 30) > 0;
+        return $this->reusablePendingPreferenceQuery->isEnabled();
     }
 
     private function normalizedEmail(string $email): string
