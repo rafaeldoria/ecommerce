@@ -100,14 +100,21 @@
         (() => {
             const digitsOnly = (value) => value.replace(/\D+/g, '');
 
-            const formatBr = (value) => {
+            const nationalDigits = (value, countryCode, maxLength) => {
+                const trimmedValue = value.trim();
                 let digits = digitsOnly(value);
 
-                if (digits.startsWith('55') && digits.length > 11) {
-                    digits = digits.slice(2);
+                if (trimmedValue.startsWith(`+${countryCode}`)) {
+                    digits = digits.slice(countryCode.length);
+                } else if (digits.startsWith(countryCode) && digits.length > maxLength) {
+                    digits = digits.slice(countryCode.length);
                 }
 
-                digits = digits.slice(0, 11);
+                return digits.slice(0, maxLength);
+            };
+
+            const formatBr = (value) => {
+                const digits = nationalDigits(value, '55', 11);
 
                 if (digits.length <= 2) {
                     return digits === '' ? '' : `+55 (${digits}`;
@@ -121,13 +128,7 @@
             };
 
             const formatUs = (value) => {
-                let digits = digitsOnly(value);
-
-                if (digits.startsWith('1') && digits.length > 10) {
-                    digits = digits.slice(1);
-                }
-
-                digits = digits.slice(0, 10);
+                const digits = nationalDigits(value, '1', 10);
 
                 if (digits.length <= 3) {
                     return digits === '' ? '' : `+1 (${digits}`;
