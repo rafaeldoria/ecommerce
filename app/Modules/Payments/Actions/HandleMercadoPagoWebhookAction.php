@@ -12,6 +12,7 @@ class HandleMercadoPagoWebhookAction
 {
     public function __construct(
         private readonly MercadoPagoWebhookSignatureVerifier $signatureVerifier,
+        private readonly ProcessMercadoPagoPaymentUpdateAction $processMercadoPagoPaymentUpdateAction,
     ) {}
 
     public function execute(MercadoPagoWebhookRequestData $data): MercadoPagoWebhookResponse
@@ -89,11 +90,38 @@ class HandleMercadoPagoWebhookAction
             return new MercadoPagoWebhookResponse(httpStatus: 200, status: 'ignored');
         }
 
+        if ($dataId === null) {
+            $webhookRequest->update(array_merge($verifiedUpdate, [
+                'processing_status' => 'ignored',
+                'error_message' => 'missing_provider_payment_id',
+            ]));
+
+            return new MercadoPagoWebhookResponse(httpStatus: 200, status: 'ignored');
+        }
+
+        try {
+            $paymentUpdate = $this->processMercadoPagoPaymentUpdateAction->execute($dataId);
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            $webhookRequest->update(array_merge($verifiedUpdate, [
+                'processing_status' => 'failed',
+                'http_status_returned' => 500,
+                'provider_payment_id' => $dataId,
+                'error_message' => $exception->getMessage(),
+            ]));
+
+            return new MercadoPagoWebhookResponse(httpStatus: 500, status: 'payment_processing_failed');
+        }
+
         $webhookRequest->update(array_merge($verifiedUpdate, [
-            'provider_payment_id' => $dataId,
+            'processing_status' => $paymentUpdate->status === 'processed' ? 'processed' : 'failed',
+            'related_payment_id' => $paymentUpdate->paymentId,
+            'provider_payment_id' => $paymentUpdate->providerPaymentId ?? $dataId,
+            'error_message' => $paymentUpdate->status === 'processed' ? null : $paymentUpdate->status,
         ]));
 
-        return new MercadoPagoWebhookResponse(httpStatus: 200, status: 'verified');
+        return new MercadoPagoWebhookResponse(httpStatus: 200, status: $paymentUpdate->status);
     }
 
     private function signatureDataId(MercadoPagoWebhookRequestData $data): ?string

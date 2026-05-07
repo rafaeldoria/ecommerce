@@ -31,6 +31,66 @@
         </div>
 
         <div class="rounded-[2rem] border border-zinc-800 bg-zinc-900/70 p-6">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <h2 class="text-xl font-semibold text-white">{{ __('admin.orders.payment_block_title') }}</h2>
+                    <p class="mt-2 text-sm leading-6 text-zinc-400">
+                        {{ __('admin.orders.payment_block_summary') }}
+                    </p>
+                </div>
+
+                <span @class([
+                    'rounded-full px-3 py-1 text-xs font-semibold',
+                    'bg-emerald-400/10 text-emerald-300' => $manualFulfillmentAllowed,
+                    'bg-amber-400/10 text-amber-300' => ! $manualFulfillmentAllowed,
+                ])>
+                    {{ $manualFulfillmentAllowed
+                        ? __('admin.orders.fulfillment_allowed')
+                        : __('admin.orders.fulfillment_blocked') }}
+                </span>
+            </div>
+
+            @if ($latestPayment)
+                <dl class="mt-5 grid gap-4 text-sm sm:grid-cols-2">
+                    <div>
+                        <dt class="text-xs uppercase tracking-[0.2em] text-zinc-500">{{ __('admin.orders.payment_status_label') }}</dt>
+                        <dd class="mt-1 font-medium text-zinc-100">{{ $latestPayment->status }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs uppercase tracking-[0.2em] text-zinc-500">{{ __('admin.orders.provider_payment_id_label') }}</dt>
+                        <dd class="mt-1 font-medium text-zinc-100">{{ $latestPayment->provider_payment_id ?? '-' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs uppercase tracking-[0.2em] text-zinc-500">{{ __('admin.orders.provider_status_label') }}</dt>
+                        <dd class="mt-1 font-medium text-zinc-100">{{ $latestPayment->provider_status ?? '-' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs uppercase tracking-[0.2em] text-zinc-500">{{ __('admin.orders.provider_status_detail_label') }}</dt>
+                        <dd class="mt-1 font-medium text-zinc-100">{{ $latestPayment->provider_status_detail ?? '-' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs uppercase tracking-[0.2em] text-zinc-500">{{ __('admin.orders.last_provider_update_label') }}</dt>
+                        <dd class="mt-1 font-medium text-zinc-100">{{ $formattedPaymentUpdatedAt }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs uppercase tracking-[0.2em] text-zinc-500">{{ __('admin.orders.webhook_journal_label') }}</dt>
+                        <dd class="mt-1 font-medium text-zinc-100">
+                            @if ($latestWebhook)
+                                #{{ $latestWebhook->id }} - {{ $latestWebhook->processing_status }} - {{ $formattedWebhookReceivedAt }}
+                            @else
+                                {{ __('admin.orders.no_webhook_journal') }}
+                            @endif
+                        </dd>
+                    </div>
+                </dl>
+            @else
+                <p class="mt-5 rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4 text-sm leading-6 text-zinc-400">
+                    {{ __('admin.orders.no_payment_recorded') }}
+                </p>
+            @endif
+        </div>
+
+        <div class="rounded-[2rem] border border-zinc-800 bg-zinc-900/70 p-6">
             <h2 class="text-xl font-semibold text-white">{{ __('admin.orders.items_block_title') }}</h2>
             <div class="mt-5 space-y-4">
                 @foreach ($foundOrder->items as $item)

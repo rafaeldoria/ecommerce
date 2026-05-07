@@ -5,7 +5,9 @@ namespace App\Providers;
 use App\Modules\Cart\Contracts\CartStore;
 use App\Modules\Cart\Stores\SessionCartStore;
 use App\Modules\Payments\Contracts\CheckoutPreferenceGateway;
+use App\Modules\Payments\Contracts\PaymentDetailsGateway;
 use App\Modules\Payments\MercadoPago\MercadoPagoCheckoutPreferenceGateway;
+use App\Modules\Payments\MercadoPago\MercadoPagoPaymentDetailsGateway;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -21,6 +23,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind(CartStore::class, SessionCartStore::class);
         $this->app->bind(CheckoutPreferenceGateway::class, MercadoPagoCheckoutPreferenceGateway::class);
+        $this->app->bind(PaymentDetailsGateway::class, MercadoPagoPaymentDetailsGateway::class);
     }
 
     /**
