@@ -51,7 +51,10 @@ class CheckoutPreferenceActionTest extends TestCase
                     preferenceId: 'pref_test_123',
                     publicKey: 'TEST-public-key',
                     checkoutUrl: 'https://sandbox.mercadopago.test/checkout',
-                    rawProviderResponse: ['id' => 'pref_test_123'],
+                    rawProviderResponse: [
+                        'id' => 'pref_test_123',
+                        'payer' => ['email' => 'buyer@example.com'],
+                    ],
                 );
             }
         };

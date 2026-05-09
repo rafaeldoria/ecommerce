@@ -11,6 +11,7 @@ use App\Modules\Payments\DTOs\PaymentUpdateResult;
 use App\Modules\Payments\DTOs\ProviderPaymentDetails;
 use App\Modules\Payments\Enums\PaymentProvider;
 use App\Modules\Payments\Enums\PaymentStatus;
+use App\Modules\Payments\MercadoPago\MercadoPagoPayloadSanitizer;
 use App\Modules\Payments\Models\Payment;
 use Illuminate\Support\Facades\DB;
 
@@ -18,6 +19,7 @@ class ProcessMercadoPagoPaymentUpdateAction
 {
     public function __construct(
         private readonly PaymentDetailsGateway $paymentDetailsGateway,
+        private readonly MercadoPagoPayloadSanitizer $payloadSanitizer,
     ) {}
 
     public function execute(string $providerPaymentId): PaymentUpdateResult
@@ -85,7 +87,7 @@ class ProcessMercadoPagoPaymentUpdateAction
                 'provider_status' => $details->status,
                 'provider_status_detail' => $details->statusDetail,
                 'currency' => $details->currency ?? $payment->currency,
-                'raw_provider_snapshot' => $details->rawProviderResponse,
+                'raw_provider_snapshot' => $this->payloadSanitizer->paymentSnapshot($details->rawProviderResponse),
                 'metadata' => $metadata,
             ]);
 

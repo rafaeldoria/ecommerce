@@ -13,6 +13,7 @@ use App\Modules\Catalog\Exceptions\InvalidProductReference as CatalogInvalidProd
 use App\Modules\Catalog\Exceptions\ProductImageStorageFailed;
 use App\Modules\Orders\Exceptions\InsufficientStock;
 use App\Modules\Orders\Exceptions\InvalidOrderContact;
+use App\Support\TrustedProxies;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -32,8 +33,12 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    ->withCommands()
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->trustProxies(at: '*');
+        $middleware->trustProxies(at: TrustedProxies::resolve(
+            configured: env('TRUSTED_PROXIES'),
+            environment: env('APP_ENV', 'production'),
+        ));
 
         $middleware->validateCsrfTokens(except: [
             'webhooks/mercado-pago',

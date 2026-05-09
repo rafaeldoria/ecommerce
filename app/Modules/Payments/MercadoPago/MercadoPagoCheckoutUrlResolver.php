@@ -12,11 +12,21 @@ class MercadoPagoCheckoutUrlResolver
 
     public function resolve(object $preference): ?string
     {
-        return match ($this->strategy()) {
+        $url = match ($this->strategy()) {
             self::INIT_POINT => $this->stringOrNull($preference->init_point ?? null),
             self::SANDBOX_INIT_POINT => $this->stringOrNull($preference->sandbox_init_point ?? null)
                 ?? $this->stringOrNull($preference->init_point ?? null),
         };
+
+        if ($url === null) {
+            return null;
+        }
+
+        if (!$this->hostIsAllowed($url)) {
+            throw new PaymentConfigurationMissing(__('general.errors.payment_configuration_invalid'));
+        }
+
+        return $url;
     }
 
     private function strategy(): string
@@ -39,5 +49,22 @@ class MercadoPagoCheckoutUrlResolver
         $value = trim($value);
 
         return $value === '' ? null : $value;
+    }
+
+    private function hostIsAllowed(string $url): bool
+    {
+        $host = parse_url($url, PHP_URL_HOST);
+
+        if (!is_string($host) || trim($host) === '') {
+            return false;
+        }
+
+        $allowedHosts = config('services.mercado_pago.checkout_allowed_hosts', []);
+
+        if (!is_array($allowedHosts)) {
+            return false;
+        }
+
+        return in_array(strtolower($host), array_map('strtolower', $allowedHosts), true);
     }
 }

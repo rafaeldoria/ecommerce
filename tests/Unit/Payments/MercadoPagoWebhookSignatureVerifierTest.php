@@ -127,4 +127,25 @@ class MercadoPagoWebhookSignatureVerifierTest extends TestCase
             $this->assertTrue($result->valid);
         }
     }
+
+    #[Test]
+    public function it_rejects_non_numeric_timestamps_when_tolerance_is_enabled(): void
+    {
+        config(['services.mercado_pago.webhook_signature_tolerance_seconds' => 300]);
+
+        $timestamp = 'not-a-timestamp';
+        $requestId = 'request-id-123';
+        $dataId = '123456';
+        $manifest = "id:{$dataId};request-id:{$requestId};ts:{$timestamp};";
+        $hash = hash_hmac('sha256', $manifest, $this->secret);
+
+        $result = app(MercadoPagoWebhookSignatureVerifier::class)->verify(
+            xSignature: "ts={$timestamp},v1={$hash}",
+            xRequestId: $requestId,
+            dataId: $dataId,
+        );
+
+        $this->assertFalse($result->valid);
+        $this->assertSame('signature_timestamp_out_of_tolerance', $result->error);
+    }
 }

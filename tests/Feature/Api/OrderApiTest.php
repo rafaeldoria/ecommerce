@@ -57,4 +57,36 @@ class OrderApiTest extends TestCase
             __('general.errors.empty_cart'),
         );
     }
+
+    #[Test]
+    public function public_order_creation_is_rate_limited_by_ip(): void
+    {
+        config([
+            'security.rate_limits.public_order_creations_per_minute' => 1,
+            'security.rate_limits.public_order_creations_per_session_minute' => 100,
+        ]);
+
+        $firstProduct = Product::factory()->create(['quantity' => 2]);
+        $secondProduct = Product::factory()->create(['quantity' => 2]);
+
+        $this->postJson('/api/cart/items', [
+            'product_id' => $firstProduct->getKey(),
+            'quantity' => 1,
+        ])->assertCreated();
+
+        $this->postJson('/api/orders', [
+            'email' => 'buyer@example.com',
+            'whatsapp' => '+55 11 98888-7777',
+        ])->assertCreated();
+
+        $this->postJson('/api/cart/items', [
+            'product_id' => $secondProduct->getKey(),
+            'quantity' => 1,
+        ])->assertCreated();
+
+        $this->postJson('/api/orders', [
+            'email' => 'buyer@example.com',
+            'whatsapp' => '+55 11 98888-7777',
+        ])->assertTooManyRequests();
+    }
 }
