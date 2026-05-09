@@ -65,6 +65,7 @@ class AdminPartThreeTest extends TestCase
             ->get(route('admin.orders.index'))
             ->assertOk()
             ->assertSee('buyer11@example.com')
+            ->assertSee(__('admin.orders.open_detail'))
             ->assertDontSee('buyer01@example.com');
     }
 

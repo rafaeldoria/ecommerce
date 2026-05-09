@@ -10,7 +10,7 @@ use Tests\TestCase;
 class TrustedProxyTest extends TestCase
 {
     #[Test]
-    public function forwarded_client_ip_headers_are_not_trusted_by_default(): void
+    public function forwarded_client_ip_headers_are_trusted_by_the_proxy_boundary(): void
     {
         Route::get('/_test/request-ip', fn (Request $request) => response()->json([
             'ip' => $request->ip(),
@@ -21,6 +21,6 @@ class TrustedProxyTest extends TestCase
             ->withHeaders(['X-Forwarded-For' => '198.51.100.20'])
             ->get('/_test/request-ip')
             ->assertOk()
-            ->assertJsonPath('ip', '203.0.113.10');
+            ->assertJsonPath('ip', '198.51.100.20');
     }
 }

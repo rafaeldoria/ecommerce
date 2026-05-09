@@ -172,6 +172,62 @@ class ProductsCrudTest extends TestCase
             ->assertDontSee('Very Long Product Name 11 With Extra Operational Text');
     }
 
+    #[Test]
+    public function admin_can_filter_products_by_game(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $dota = Game::factory()->create(['name' => 'Dota 2']);
+        $cs2 = Game::factory()->create(['name' => 'CS2']);
+        $rarity = Rarity::factory()->create();
+
+        Product::factory()->create([
+            'name' => 'Dota Only Product',
+            'game_id' => $dota->getKey(),
+            'rarity_id' => $rarity->getKey(),
+        ]);
+        Product::factory()->create([
+            'name' => 'CS2 Only Product',
+            'game_id' => $cs2->getKey(),
+            'rarity_id' => $rarity->getKey(),
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.products.index', ['game' => $cs2->getKey()]))
+            ->assertOk()
+            ->assertSee(__('admin.products.filter_game_label'))
+            ->assertSee('CS2 Only Product')
+            ->assertDontSee('Dota Only Product');
+    }
+
+    #[Test]
+    public function changing_the_admin_product_game_filter_resets_pagination(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $dota = Game::factory()->create(['name' => 'Dota 2']);
+        $cs2 = Game::factory()->create(['name' => 'CS2']);
+        $rarity = Rarity::factory()->create();
+
+        Product::factory()->count(11)->sequence(
+            fn ($sequence) => [
+                'name' => sprintf('Dota Product %02d', $sequence->index + 1),
+                'game_id' => $dota->getKey(),
+                'rarity_id' => $rarity->getKey(),
+            ],
+        )->create();
+        Product::factory()->create([
+            'name' => 'CS2 Filter Result',
+            'game_id' => $cs2->getKey(),
+            'rarity_id' => $rarity->getKey(),
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(Products::class)
+            ->call('gotoPage', 2)
+            ->set('selectedGameId', $cs2->getKey())
+            ->assertSee('CS2 Filter Result')
+            ->assertDontSee('Dota Product 11');
+    }
+
     private function storagePathFromPublicUrl(string $url): string
     {
         $path = parse_url($url, PHP_URL_PATH);

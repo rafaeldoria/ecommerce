@@ -132,7 +132,7 @@ return [
         'email' => 'admin@gr-shop.test',
         'location' => 'Sao Paulo, SP - Brasil',
         'support_note' => 'Fulfillment manual e suporte continuam claros durante o fluxo de compra.',
-        'copyright' => '© 2026 GR-Shop. Loja demo para validacao do frontend.',
+        'copyright' => '© 2026 GR-Shop. Loja de itens de jogos.',
     ],
     'metadata' => [
         'default' => [

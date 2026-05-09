@@ -1,3 +1,6 @@
+@php($whatsappMask = app()->getLocale() === 'pt_BR' ? 'br' : 'us')
+@php($whatsappPlaceholder = $whatsappMask === 'br' ? '+55 (11) 99999-1111' : '+1 (555) 123-4567')
+
 <section class="mx-auto max-w-6xl px-4 py-12">
     <div>
         <h1 class="text-3xl font-semibold tracking-normal text-white">{{ __('storefront.checkout.title') }}</h1>
@@ -42,8 +45,10 @@
                             class="mt-2 h-12 w-full rounded-lg border border-white/10 bg-slate-950 px-3 text-white outline-none transition placeholder:text-slate-600 focus:border-teal-300"
                             type="tel"
                             autocomplete="tel"
+                            data-whatsapp-mask="{{ $whatsappMask }}"
                             wire:model="whatsapp"
-                            placeholder="+55 11 99999-1111"
+                            placeholder="{{ $whatsappPlaceholder }}"
+                            maxlength="{{ $whatsappMask === 'br' ? 19 : 17 }}"
                         >
                         @error('whatsapp')
                             <p class="mt-2 text-sm text-red-300">{{ $message }}</p>
@@ -89,3 +94,71 @@
     @endif
 
 </section>
+
+@once
+    <script>
+        (() => {
+            const digitsOnly = (value) => value.replace(/\D+/g, '');
+
+            const nationalDigits = (value, countryCode, maxLength) => {
+                const trimmedValue = value.trim();
+                let digits = digitsOnly(value);
+
+                if (trimmedValue.startsWith(`+${countryCode}`)) {
+                    digits = digits.slice(countryCode.length);
+                } else if (digits.startsWith(countryCode) && digits.length > maxLength) {
+                    digits = digits.slice(countryCode.length);
+                }
+
+                return digits.slice(0, maxLength);
+            };
+
+            const formatBr = (value) => {
+                const digits = nationalDigits(value, '55', 11);
+
+                if (digits.length <= 2) {
+                    return digits === '' ? '' : `+55 (${digits}`;
+                }
+
+                if (digits.length <= 7) {
+                    return `+55 (${digits.slice(0, 2)}) ${digits.slice(2)}`;
+                }
+
+                return `+55 (${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+            };
+
+            const formatUs = (value) => {
+                const digits = nationalDigits(value, '1', 10);
+
+                if (digits.length <= 3) {
+                    return digits === '' ? '' : `+1 (${digits}`;
+                }
+
+                if (digits.length <= 6) {
+                    return `+1 (${digits.slice(0, 3)}) ${digits.slice(3)}`;
+                }
+
+                return `+1 (${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+            };
+
+            const bindWhatsappMasks = () => {
+                document.querySelectorAll('[data-whatsapp-mask]').forEach((input) => {
+                    if (input.dataset.whatsappMaskBound === 'true') {
+                        return;
+                    }
+
+                    input.dataset.whatsappMaskBound = 'true';
+                    input.addEventListener('input', () => {
+                        input.value = input.dataset.whatsappMask === 'br'
+                            ? formatBr(input.value)
+                            : formatUs(input.value);
+                    });
+                });
+            };
+
+            document.addEventListener('DOMContentLoaded', bindWhatsappMasks);
+            document.addEventListener('livewire:navigated', bindWhatsappMasks);
+            bindWhatsappMasks();
+        })();
+    </script>
+@endonce

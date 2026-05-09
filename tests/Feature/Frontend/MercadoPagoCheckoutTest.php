@@ -53,6 +53,40 @@ class MercadoPagoCheckoutTest extends TestCase
     }
 
     #[Test]
+    public function checkout_uses_a_united_states_whatsapp_mask_for_english(): void
+    {
+        $product = Product::factory()->create();
+
+        app(AddToCartAction::class)->execute(new AddToCartData(
+            productId: $product->getKey(),
+            quantity: 1,
+        ));
+
+        app()->setLocale('en');
+
+        Livewire::test(Checkout::class)
+            ->assertSee('data-whatsapp-mask="us"', false)
+            ->assertSee('+1 (555) 123-4567', false);
+    }
+
+    #[Test]
+    public function checkout_uses_a_brazilian_whatsapp_mask_for_portuguese(): void
+    {
+        $product = Product::factory()->create();
+
+        app(AddToCartAction::class)->execute(new AddToCartData(
+            productId: $product->getKey(),
+            quantity: 1,
+        ));
+
+        app()->setLocale('pt_BR');
+
+        Livewire::test(Checkout::class)
+            ->assertSee('data-whatsapp-mask="br"', false)
+            ->assertSee('+55 (11) 99999-1111', false);
+    }
+
+    #[Test]
     public function checkout_redirects_to_mercado_pago_after_creating_pending_order_and_payment(): void
     {
         $this->app->bind(CheckoutPreferenceGateway::class, fn () => new class implements CheckoutPreferenceGateway

@@ -132,7 +132,7 @@ return [
         'email' => 'admin@gr-shop.test',
         'location' => 'Sao Paulo, SP - Brazil',
         'support_note' => 'Manual fulfillment and support remain clear throughout the purchase flow.',
-        'copyright' => '© 2026 GR-Shop. Demo storefront for frontend validation.',
+        'copyright' => '© 2026 GR-Shop. Game items storefront.',
     ],
     'metadata' => [
         'default' => [

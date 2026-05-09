@@ -19,11 +19,14 @@ class ArchitectureBaselineTest extends TestCase
             app_path('Modules/Catalog/DomainServices/ProductWriteRules.php'),
             app_path('Modules/Catalog/Models/Product.php'),
             app_path('Modules/Catalog/ProductImages/ProductImageStorage.php'),
+            app_path('Modules/Catalog/Queries/ListFeaturedStorefrontProductsQuery.php'),
+            app_path('Modules/Catalog/Queries/ListStorefrontGamesQuery.php'),
             app_path('Modules/Catalog/Queries/SearchCatalogProductsQuery.php'),
             app_path('Modules/Cart/Actions/AddToCartAction.php'),
             app_path('Modules/Cart/Contracts/CartStore.php'),
             app_path('Modules/Cart/DTOs/AddToCartData.php'),
             app_path('Modules/Cart/Queries/FindCartProductQuery.php'),
+            app_path('Modules/Cart/Queries/ListCartProductsQuery.php'),
             app_path('Modules/Orders/Actions/CreateOrderAction.php'),
             app_path('Modules/Orders/DTOs/CreateOrderData.php'),
             app_path('Modules/Orders/Events/OrderCreated.php'),
@@ -31,8 +34,10 @@ class ArchitectureBaselineTest extends TestCase
             app_path('Modules/Orders/Queries/ListAdminOrdersQuery.php'),
             app_path('Modules/Payments/Actions/CapturePaymentAction.php'),
             app_path('Modules/Payments/DTOs/CapturePaymentData.php'),
+            app_path('Modules/Payments/Queries/ReusablePendingMercadoPagoPreferenceQuery.php'),
             app_path('Modules/Admin/Actions/AuthenticateAdminAction.php'),
             app_path('Modules/Admin/DTOs/AdminLoginData.php'),
+            app_path('Modules/Admin/Queries/GetAdminDashboardStatsQuery.php'),
         ];
 
         foreach ($paths as $path) {

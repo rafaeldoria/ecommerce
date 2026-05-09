@@ -3,8 +3,9 @@
 namespace App\Livewire\Storefront;
 
 use App\Livewire\Concerns\UsesLocalizedPageTitle;
-use App\Modules\Catalog\Models\Game;
 use App\Modules\Catalog\Models\Product;
+use App\Modules\Catalog\Queries\ListStorefrontGamesQuery;
+use App\Modules\Catalog\Queries\SearchCatalogProductsQuery;
 use App\Support\MoneyFormatter;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -29,27 +30,14 @@ class Catalog extends Component
 
     public int $totalProductCount = 0;
 
-    public function mount(): void
+    public function mount(ListStorefrontGamesQuery $listStorefrontGamesQuery): void
     {
-        $games = Game::query()
-            ->withCount([
-                'products as available_products_count' => static fn ($query) => $query->available(),
-            ])
-            ->orderBy('name')
-            ->get();
-
-        $this->games = $games
-            ->map(fn (Game $game): array => [
-                'id' => $game->getKey(),
-                'name' => $game->name,
-                'slug' => Str::slug($game->name),
-                'count' => (int) $game->available_products_count,
-            ])->values()->all();
+        $this->games = $listStorefrontGamesQuery->execute();
 
         $requestedGame = trim((string) request()->query('game', ''));
-        $selectedGame = $this->resolveSelectedGame($games, $requestedGame);
+        $selectedGame = $this->resolveSelectedGame(collect($this->games), $requestedGame);
 
-        $this->selectedGameSlug = $selectedGame !== null ? Str::slug($selectedGame->name) : null;
+        $this->selectedGameSlug = $selectedGame['slug'] ?? null;
 
         if ($selectedGame === null) {
             $this->totalProductCount = 0;
@@ -58,19 +46,14 @@ class Catalog extends Component
         }
     }
 
-    public function render()
+    public function render(SearchCatalogProductsQuery $searchCatalogProductsQuery)
     {
         $selectedGame = $this->selectedGame();
         $products = null;
 
         if ($selectedGame !== null) {
-            $products = Product::query()
-                ->with(['game:id,name', 'rarity:id,name'])
-                ->available()
-                ->where('game_id', $selectedGame->getKey())
-                ->orderBy('name')
-                ->paginate(9)
-                ->withQueryString()
+            $products = $searchCatalogProductsQuery
+                ->executePaginated(gameId: (int) $selectedGame['id'], perPage: 9)
                 ->through(fn (Product $product): array => [
                     'id' => $product->getKey(),
                     'name' => $product->name,
@@ -96,16 +79,14 @@ class Catalog extends Component
         $this->resetPage();
     }
 
-    private function selectedGame(): ?Game
+    private function selectedGame(): ?array
     {
         if ($this->selectedGameSlug === null) {
             return null;
         }
 
-        return Game::query()
-            ->orderBy('name')
-            ->get()
-            ->first(fn (Game $game): bool => Str::slug($game->name) === $this->selectedGameSlug);
+        return collect($this->games)
+            ->first(fn (array $game): bool => $game['slug'] === $this->selectedGameSlug);
     }
 
     protected function titleKey(): string
@@ -113,29 +94,29 @@ class Catalog extends Component
         return 'storefront.metadata.catalog.title';
     }
 
-    private function resolveSelectedGame(Collection $games, string $requestedGame): ?Game
+    private function resolveSelectedGame(Collection $games, string $requestedGame): ?array
     {
         if ($games->isEmpty()) {
             return null;
         }
 
         if ($requestedGame === '') {
-            /** @var Game $firstGame */
+            /** @var array{id: int, name: string, slug: string, count: int} $firstGame */
             $firstGame = $games->first();
 
             return $firstGame;
         }
 
-        /** @var ?Game $selectedGame */
+        /** @var array{id: int, name: string, slug: string, count: int}|null $selectedGame */
         $selectedGame = $games->first(
-            fn (Game $game): bool => Str::slug($game->name) === Str::slug($requestedGame)
+            fn (array $game): bool => $game['slug'] === Str::slug($requestedGame)
         );
 
         if ($selectedGame !== null) {
             return $selectedGame;
         }
 
-        /** @var Game $firstGame */
+        /** @var array{id: int, name: string, slug: string, count: int} $firstGame */
         $firstGame = $games->first();
 
         return $firstGame;

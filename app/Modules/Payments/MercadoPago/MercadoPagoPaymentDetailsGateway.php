@@ -19,7 +19,8 @@ class MercadoPagoPaymentDetailsGateway implements PaymentDetailsGateway
 
         $response = Http::withToken($accessToken)
             ->acceptJson()
-            ->get('https://api.mercadopago.com/v1/payments/'.urlencode($providerPaymentId))
+            ->baseUrl($this->baseUrl())
+            ->get('/v1/payments/'.urlencode($providerPaymentId))
             ->throw()
             ->json();
 
@@ -54,5 +55,16 @@ class MercadoPagoPaymentDetailsGateway implements PaymentDetailsGateway
         }
 
         return (int) round(((float) $value) * 100);
+    }
+
+    private function baseUrl(): string
+    {
+        $baseUrl = rtrim(trim((string) config('apis.mercado_pago.base_url', '')), '/');
+
+        if ($baseUrl === '') {
+            throw new PaymentConfigurationMissing(__('general.errors.payment_configuration_invalid'));
+        }
+
+        return $baseUrl;
     }
 }

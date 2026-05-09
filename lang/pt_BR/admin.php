@@ -83,6 +83,8 @@ return [
         'rarity_label' => 'Raridade',
         'select_game' => 'Selecione um game',
         'select_rarity' => 'Selecione uma raridade',
+        'filter_game_label' => 'Filtrar por game',
+        'filter_all_games' => 'Todos os games',
         'empty_state' => 'Nenhum produto ainda. Crie o primeiro produto com imagem, game, raridade, preco e estoque.',
         'messages' => [
             'created' => 'Produto criado.',
@@ -112,6 +114,7 @@ return [
         'fulfillment_blocked' => 'Aguardar pagamento verificado',
         'no_webhook_journal' => 'Nenhum journal de webhook ainda',
         'no_payment_recorded' => 'Nenhum pagamento local foi registrado para este pedido ainda.',
+        'open_detail' => 'Abrir detalhes',
     ],
     'tables' => [
         'id' => 'ID',
