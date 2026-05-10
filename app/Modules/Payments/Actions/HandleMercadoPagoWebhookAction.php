@@ -175,6 +175,7 @@ class HandleMercadoPagoWebhookAction
             ->where('x_request_id', $xRequestId)
             ->where('signature_hash', $signatureHash)
             ->where('signature_valid', true)
+            ->whereIn('processing_status', ['processed', 'ignored', 'duplicate'])
             ->exists();
     }
 

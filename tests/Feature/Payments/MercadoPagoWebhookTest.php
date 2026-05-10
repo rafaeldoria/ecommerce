@@ -221,6 +221,28 @@ class MercadoPagoWebhookTest extends TestCase
     }
 
     #[Test]
+    public function it_throttles_webhook_requests_by_ip_even_when_request_ids_rotate(): void
+    {
+        config(['security.rate_limits.mercado_pago_webhooks_per_minute' => 1]);
+
+        $payload = $this->paymentPayload(dataId: '123456');
+
+        $this->postJson(
+            '/webhooks/mercado-pago?data.id=123456&type=payment',
+            $payload,
+            $this->signedHeaders(dataId: '123456', signature: 'ts=1742505638683,v1=invalid', requestId: 'first-request-id'),
+        )->assertUnauthorized();
+
+        $this->postJson(
+            '/webhooks/mercado-pago?data.id=123456&type=payment',
+            $payload,
+            $this->signedHeaders(dataId: '123456', signature: 'ts=1742505638683,v1=invalid', requestId: 'second-request-id'),
+        )->assertTooManyRequests();
+
+        $this->assertDatabaseCount((new MercadoPagoWebhookRequest)->getTable(), 1);
+    }
+
+    #[Test]
     public function it_rejects_oversized_webhooks_before_journaling(): void
     {
         config(['security.mercado_pago_webhook_max_bytes' => 20]);
@@ -279,6 +301,59 @@ class MercadoPagoWebhookTest extends TestCase
             'processing_status' => 'duplicate',
             'error_message' => 'duplicate_webhook_request',
         ]);
+    }
+
+    #[Test]
+    public function it_retries_a_verified_webhook_after_a_transient_processing_failure(): void
+    {
+        $payment = $this->pendingPayment();
+        $gateway = new class($payment->external_reference) implements PaymentDetailsGateway
+        {
+            public int $calls = 0;
+
+            public function __construct(private readonly string $externalReference) {}
+
+            public function find(string $providerPaymentId): ProviderPaymentDetails
+            {
+                $this->calls++;
+
+                if ($this->calls === 1) {
+                    throw new \RuntimeException('temporary provider outage');
+                }
+
+                return new ProviderPaymentDetails(
+                    providerPaymentId: $providerPaymentId,
+                    externalReference: $this->externalReference,
+                    status: 'approved',
+                    statusDetail: 'accredited',
+                    amountCents: 10000,
+                    currency: 'BRL',
+                    rawProviderResponse: ['id' => $providerPaymentId, 'status' => 'approved'],
+                );
+            }
+        };
+
+        $this->app->instance(PaymentDetailsGateway::class, $gateway);
+
+        $payload = $this->paymentPayload(dataId: '123456');
+        $headers = $this->signedHeaders(dataId: '123456', requestId: 'retry-after-failure-request-id');
+
+        $this->postJson('/webhooks/mercado-pago?data.id=123456&type=payment', $payload, $headers)
+            ->assertStatus(500)
+            ->assertJsonPath('status', 'payment_processing_failed');
+
+        $this->postJson('/webhooks/mercado-pago?data.id=123456&type=payment', $payload, $headers)
+            ->assertOk()
+            ->assertJsonPath('status', 'processed');
+
+        $this->assertSame(2, $gateway->calls);
+        $this->assertSame(
+            ['failed', 'processed'],
+            MercadoPagoWebhookRequest::query()
+                ->orderBy('id')
+                ->pluck('processing_status')
+                ->all(),
+        );
     }
 
     private function fakeGateway(ProviderPaymentDetails $details): void

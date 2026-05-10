@@ -56,7 +56,7 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('mercado-pago-webhooks', fn (Request $request): Limit => Limit::perMinute(
             $this->positiveConfig('security.rate_limits.mercado_pago_webhooks_per_minute', 60),
-        )->by($request->header('x-request-id') ?: (string) $request->ip()));
+        )->by((string) $request->ip()));
     }
 
     private function adminLoginIdentifier(Request $request): ?string
