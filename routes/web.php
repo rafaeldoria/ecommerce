@@ -44,6 +44,7 @@ Route::get('/about', About::class)->name('storefront.about');
 Route::get('/contact', Contact::class)->name('storefront.contact');
 Route::get('/faq', Faq::class)->name('storefront.faq');
 Route::post('/webhooks/mercado-pago', MercadoPagoWebhookController::class)
+    ->middleware('throttle:mercado-pago-webhooks')
     ->name('webhooks.mercado-pago');
 Route::get('/locale/{locale}', function (Request $request, string $locale): RedirectResponse {
     abort_unless(in_array($locale, ['en', 'pt-BR'], true), 404);

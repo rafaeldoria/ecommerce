@@ -17,13 +17,17 @@ Route::middleware('web')->group(function (): void {
     Route::get('/cart', [CartController::class, 'show'])
         ->name('api.cart.show');
     Route::post('/cart/items', [CartController::class, 'store'])
+        ->middleware('throttle:public-cart-mutations')
         ->name('api.cart.items.store');
     Route::patch('/cart/items/{product}', [CartController::class, 'update'])
+        ->middleware('throttle:public-cart-mutations')
         ->name('api.cart.items.update');
     Route::delete('/cart/items/{product}', [CartController::class, 'destroy'])
+        ->middleware('throttle:public-cart-mutations')
         ->name('api.cart.items.destroy');
 
     Route::post('/orders', [OrderController::class, 'store'])
+        ->middleware('throttle:public-order-creation')
         ->name('api.orders.store');
 });
 

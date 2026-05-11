@@ -27,13 +27,20 @@ class AuthApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('message', __('general.api.admin.auth.logged_in'))
             ->assertJsonPath('data.user.id', $admin->getKey())
-            ->assertJsonPath('data.user.role', User::ROLE_ADMIN);
+            ->assertJsonPath('data.user.role', User::ROLE_ADMIN)
+            ->assertJson(fn ($json) => $json
+                ->whereType('data.token', 'string')
+                ->where('data.token', fn (string $token): bool => str_contains($token, '|grshop_'))
+                ->etc()
+            );
 
         $this->assertDatabaseHas('personal_access_tokens', [
             'tokenable_type' => User::class,
             'tokenable_id' => $admin->getKey(),
             'name' => 'postman',
         ]);
+
+        $this->assertNotNull($admin->tokens()->firstOrFail()->expires_at);
     }
 
     #[Test]

@@ -4,6 +4,7 @@ namespace App\Modules\Payments\Actions;
 
 use App\Modules\Payments\DTOs\MercadoPagoWebhookRequestData;
 use App\Modules\Payments\DTOs\MercadoPagoWebhookResponse;
+use App\Modules\Payments\MercadoPago\MercadoPagoPayloadSanitizer;
 use App\Modules\Payments\MercadoPago\MercadoPagoWebhookSignatureVerifier;
 use App\Modules\Payments\Models\MercadoPagoWebhookRequest;
 use Illuminate\Support\Arr;
@@ -11,6 +12,7 @@ use Illuminate\Support\Arr;
 class HandleMercadoPagoWebhookAction
 {
     public function __construct(
+        private readonly MercadoPagoPayloadSanitizer $payloadSanitizer,
         private readonly MercadoPagoWebhookSignatureVerifier $signatureVerifier,
         private readonly ProcessMercadoPagoPaymentUpdateAction $processMercadoPagoPaymentUpdateAction,
     ) {}
@@ -35,8 +37,8 @@ class HandleMercadoPagoWebhookAction
             'x_request_id' => $xRequestId,
             'x_signature' => $xSignature,
             'headers' => $data->headers,
-            'query' => $data->query,
-            'payload' => $data->payload,
+            'query' => $this->payloadSanitizer->webhookQuery($data->query),
+            'payload' => $this->payloadSanitizer->webhookPayload($data->payload),
         ]);
 
         if ($this->isLegacyFeedNotification($data)) {
@@ -68,6 +70,22 @@ class HandleMercadoPagoWebhookAction
             ]);
 
             return new MercadoPagoWebhookResponse(httpStatus: 401, status: 'invalid_signature');
+        }
+
+        if ($this->isDuplicateVerifiedRequest($webhookRequest, $xRequestId, $verification->hash)) {
+            $webhookRequest->update([
+                'processing_status' => 'duplicate',
+                'http_status_returned' => 200,
+                'signature_ts' => $verification->timestamp,
+                'signature_hash' => $verification->hash,
+                'signature_manifest' => $verification->manifest,
+                'signature_valid' => true,
+                'validation_error' => null,
+                'processed_at' => now(),
+                'error_message' => 'duplicate_webhook_request',
+            ]);
+
+            return new MercadoPagoWebhookResponse(httpStatus: 200, status: 'duplicate');
         }
 
         $verifiedUpdate = [
@@ -141,6 +159,24 @@ class HandleMercadoPagoWebhookAction
         return $this->stringValue($data->query['topic'] ?? null) !== null
             && $this->stringValue($data->query['id'] ?? null) !== null
             && $this->signatureDataId($data) === null;
+    }
+
+    private function isDuplicateVerifiedRequest(
+        MercadoPagoWebhookRequest $webhookRequest,
+        ?string $xRequestId,
+        ?string $signatureHash,
+    ): bool {
+        if ($xRequestId === null || $signatureHash === null) {
+            return false;
+        }
+
+        return MercadoPagoWebhookRequest::query()
+            ->whereKeyNot($webhookRequest->getKey())
+            ->where('x_request_id', $xRequestId)
+            ->where('signature_hash', $signatureHash)
+            ->where('signature_valid', true)
+            ->whereIn('processing_status', ['processed', 'ignored', 'duplicate'])
+            ->exists();
     }
 
     private function stringValue(mixed $value): ?string

@@ -44,10 +44,17 @@ return [
         'public_key' => env('MERCADO_PAGO_PUBLIC_KEY'),
         'credential_mode' => env('MERCADO_PAGO_MODE', env('MERCADO_PAGO_ENV', 'test')),
         'checkout_url_strategy' => env('MERCADO_PAGO_CHECKOUT_URL_STRATEGY', 'init_point'),
+        'checkout_allowed_hosts' => array_values(array_filter(array_map(
+            'trim',
+            explode(',', env(
+                'MERCADO_PAGO_CHECKOUT_ALLOWED_HOSTS',
+                'www.mercadopago.com.br,mercadopago.com.br,www.mercadopago.com,mercadopago.com,sandbox.mercadopago.com.br',
+            )),
+        ))),
         'statement_descriptor' => env('MERCADO_PAGO_STATEMENT_DESCRIPTOR', 'GRSHOP'),
         'notification_url' => env('MERCADO_PAGO_NOTIFICATION_URL'),
         'webhook_secret' => env('MERCADO_PAGO_WEBHOOK_SECRET'),
-        'webhook_signature_tolerance_seconds' => env('MERCADO_PAGO_WEBHOOK_SIGNATURE_TOLERANCE_SECONDS', 0),
+        'webhook_signature_tolerance_seconds' => env('MERCADO_PAGO_WEBHOOK_SIGNATURE_TOLERANCE_SECONDS', 300),
         'pending_checkout_reuse_minutes' => env('MERCADO_PAGO_PENDING_CHECKOUT_REUSE_MINUTES', 30),
     ],
 

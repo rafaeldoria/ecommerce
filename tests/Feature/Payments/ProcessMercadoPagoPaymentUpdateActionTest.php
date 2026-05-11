@@ -31,7 +31,11 @@ class ProcessMercadoPagoPaymentUpdateActionTest extends TestCase
             statusDetail: 'accredited',
             amountCents: 10000,
             currency: 'BRL',
-            rawProviderResponse: ['id' => 'mp-payment-123', 'status' => 'approved'],
+            rawProviderResponse: [
+                'id' => 'mp-payment-123',
+                'status' => 'approved',
+                'card' => ['last_four_digits' => '1234'],
+            ],
         ));
 
         $result = app(ProcessMercadoPagoPaymentUpdateAction::class)->execute('mp-payment-123');

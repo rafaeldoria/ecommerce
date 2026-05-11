@@ -30,7 +30,11 @@ class AuthController extends ApiController
         return response()->json([
             'message' => __('general.api.admin.auth.logged_in'),
             'data' => [
-                'token' => $user->createToken((string) $validated['device_name'])->plainTextToken,
+                'token' => $user->createToken(
+                    (string) $validated['device_name'],
+                    ['*'],
+                    $this->tokenExpiration(),
+                )->plainTextToken,
                 'user' => $this->userPayload($user),
             ],
         ]);
@@ -62,5 +66,18 @@ class AuthController extends ApiController
             'email' => $user?->email,
             'role' => $user?->role,
         ];
+    }
+
+    private function tokenExpiration(): ?\DateTimeInterface
+    {
+        $minutes = config('sanctum.expiration');
+
+        if ($minutes === null) {
+            return null;
+        }
+
+        $minutes = (int) $minutes;
+
+        return $minutes > 0 ? now()->addMinutes($minutes) : null;
     }
 }

@@ -40,6 +40,7 @@ class OrdersApiTest extends TestCase
         $this->getJson('/api/admin/orders')
             ->assertOk()
             ->assertJsonPath('message', __('general.api.admin.orders.listed'))
+            ->assertJsonPath('meta.per_page', 15)
             ->assertJsonFragment(['email' => 'buyer@example.com'])
             ->assertJsonFragment(['whatsapp' => '+55 11 98888-7777'])
             ->assertJsonFragment(['product_name' => 'Dragonclaw Hook']);

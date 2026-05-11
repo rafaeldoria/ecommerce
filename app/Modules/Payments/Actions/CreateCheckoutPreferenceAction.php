@@ -12,6 +12,7 @@ use App\Modules\Payments\DTOs\CheckoutPreferenceResult;
 use App\Modules\Payments\DTOs\CreateCheckoutPreferenceData;
 use App\Modules\Payments\DTOs\CreatePendingCheckoutPaymentData;
 use App\Modules\Payments\Exceptions\PaymentConfigurationMissing;
+use App\Modules\Payments\MercadoPago\MercadoPagoPayloadSanitizer;
 use App\Modules\Payments\Models\Payment;
 use App\Modules\Payments\Queries\ReusablePendingMercadoPagoPreferenceQuery;
 use Illuminate\Contracts\Session\Session;
@@ -26,6 +27,7 @@ class CreateCheckoutPreferenceAction
         private readonly CreatePendingCheckoutPaymentAction $createPendingCheckoutPaymentAction,
         private readonly CheckoutPreferenceGateway $checkoutPreferenceGateway,
         private readonly GetCurrentCartAction $getCurrentCartAction,
+        private readonly MercadoPagoPayloadSanitizer $payloadSanitizer,
         private readonly ReusablePendingMercadoPagoPreferenceQuery $reusablePendingPreferenceQuery,
         private readonly Session $session,
     ) {}
@@ -84,7 +86,7 @@ class CreateCheckoutPreferenceAction
                 ]),
                 'raw_provider_snapshot' => $preference->rawProviderResponse === []
                     ? null
-                    : $preference->rawProviderResponse,
+                    : $this->payloadSanitizer->preferenceSnapshot($preference->rawProviderResponse),
             ]);
 
             $this->session->put(self::PENDING_PAYMENT_SESSION_KEY, $payment->getKey());

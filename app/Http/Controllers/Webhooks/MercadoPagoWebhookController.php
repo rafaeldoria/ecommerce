@@ -13,6 +13,10 @@ class MercadoPagoWebhookController extends Controller
 {
     public function __invoke(Request $request, HandleMercadoPagoWebhookAction $action): JsonResponse
     {
+        if ($this->payloadTooLarge($request)) {
+            return response()->json(['status' => 'payload_too_large'], 413);
+        }
+
         $result = $action->execute(new MercadoPagoWebhookRequestData(
             headers: $this->sanitizedHeaders($request),
             query: $this->queryParams($request),
@@ -91,5 +95,22 @@ class MercadoPagoWebhookController extends Controller
         }
 
         return $query;
+    }
+
+    private function payloadTooLarge(Request $request): bool
+    {
+        $maxBytes = (int) config('security.mercado_pago_webhook_max_bytes', 65536);
+
+        if ($maxBytes < 1) {
+            return false;
+        }
+
+        $contentLength = $request->headers->get('content-length');
+
+        if (is_string($contentLength) && ctype_digit($contentLength) && (int) $contentLength > $maxBytes) {
+            return true;
+        }
+
+        return strlen($request->getContent()) > $maxBytes;
     }
 }
