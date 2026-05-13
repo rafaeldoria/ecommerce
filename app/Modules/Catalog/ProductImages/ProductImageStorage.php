@@ -25,13 +25,13 @@ class ProductImageStorage
 
     public function deleteIfOwned(?string $publicUrl): void
     {
-        $path = $this->pathFromPublicUrl($publicUrl, $this->diskName());
+        $ownedImage = $this->ownedImageFromPublicUrl($publicUrl, $this->diskName());
 
-        if ($path === null) {
+        if ($ownedImage === null) {
             return;
         }
 
-        Storage::disk($this->diskName())->delete($path);
+        Storage::disk($ownedImage['disk'])->delete($ownedImage['path']);
     }
 
     public function deleteReplaced(?string $previousPublicUrl, string $newPublicUrl): void
@@ -43,14 +43,34 @@ class ProductImageStorage
         $this->deleteIfOwned($previousPublicUrl);
     }
 
-    private function pathFromPublicUrl(?string $publicUrl, string $disk): ?string
+    /**
+     * @return array{disk: string, path: string}|null
+     */
+    private function ownedImageFromPublicUrl(?string $publicUrl, string $disk): ?array
     {
         if ($publicUrl === null) {
             return null;
         }
 
-        return $this->pathFromCurrentDiskUrl($publicUrl, $disk)
-            ?? $this->pathFromLegacyPublicStorageUrl($publicUrl);
+        $path = $this->pathFromCurrentDiskUrl($publicUrl, $disk);
+
+        if ($path !== null) {
+            return [
+                'disk' => $disk,
+                'path' => $path,
+            ];
+        }
+
+        $legacyPath = $this->pathFromLegacyPublicStorageUrl($publicUrl);
+
+        if ($legacyPath === null) {
+            return null;
+        }
+
+        return [
+            'disk' => 'public',
+            'path' => $legacyPath,
+        ];
     }
 
     private function pathFromCurrentDiskUrl(string $publicUrl, string $disk): ?string
@@ -92,10 +112,6 @@ class ProductImageStorage
 
     private function pathFromLegacyPublicStorageUrl(string $publicUrl): ?string
     {
-        if (!str_starts_with($publicUrl, '/storage/') && !str_starts_with($publicUrl, 'storage/')) {
-            return null;
-        }
-
         $path = parse_url($publicUrl, PHP_URL_PATH);
 
         if (!is_string($path)) {

@@ -22,6 +22,16 @@ class ProductsApiTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config([
+            'catalog.product_images.disk' => 'public',
+            'catalog.product_images.directory' => 'products',
+        ]);
+    }
+
     #[Test]
     public function admin_can_manage_products_and_see_unavailable_items(): void
     {

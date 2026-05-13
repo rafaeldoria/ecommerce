@@ -55,6 +55,26 @@ class ProductImageStorageTest extends TestCase
     }
 
     #[Test]
+    public function it_deletes_absolute_legacy_public_storage_urls_from_the_public_disk_after_s3_migration(): void
+    {
+        config([
+            'catalog.product_images.disk' => 'product-images',
+            'catalog.product_images.directory' => 'products',
+        ]);
+        Storage::fake('product-images', [
+            'url' => 'https://images.example.test',
+        ]);
+        Storage::fake('public');
+        Storage::disk('public')->put('products/legacy.png', 'legacy image');
+        Storage::disk('product-images')->put('products/legacy.png', 's3 image with same key');
+
+        app(ProductImageStorage::class)->deleteIfOwned('https://shop.example.test/storage/products/legacy.png');
+
+        Storage::disk('public')->assertMissing('products/legacy.png');
+        Storage::disk('product-images')->assertExists('products/legacy.png');
+    }
+
+    #[Test]
     public function it_ignores_unknown_urls_and_paths_outside_the_product_image_directory(): void
     {
         $this->fakeProductImageDisk();

@@ -19,6 +19,16 @@ class ProductsCrudTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config([
+            'catalog.product_images.disk' => 'public',
+            'catalog.product_images.directory' => 'products',
+        ]);
+    }
+
     #[Test]
     public function admin_can_create_update_and_delete_products_from_the_web_page(): void
     {
