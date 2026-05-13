@@ -78,4 +78,76 @@
             @endforelse
         </div>
     </div>
+
+    @if (count($ratingTestimonials) > 0)
+        <div class="mt-12">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                    <p class="text-sm font-semibold uppercase tracking-[0.24em] text-amber-300">{{ __('storefront.home.ratings.eyebrow') }}</p>
+                    <h2 class="mt-2 text-2xl font-semibold text-white">{{ __('storefront.home.ratings.title') }}</h2>
+                    <p class="mt-3 max-w-2xl text-sm leading-7 text-slate-400">{{ __('storefront.home.ratings.summary') }}</p>
+                </div>
+                <a class="text-sm font-medium text-teal-300 transition hover:text-teal-200" href="{{ route('storefront.catalog') }}">
+                    {{ __('storefront.home.ratings.link') }}
+                </a>
+            </div>
+
+            <div class="mt-6 grid gap-6 lg:grid-cols-3">
+                @foreach ($ratingTestimonials as $testimonial)
+                    <article class="relative flex min-h-[24rem] flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900/75 p-6 shadow-[0_24px_80px_rgba(8,15,28,0.38)]">
+                        <span class="pointer-events-none absolute right-5 top-3 text-7xl font-black leading-none text-amber-300/10" aria-hidden="true">&rdquo;</span>
+
+                        <div class="relative flex flex-wrap items-center gap-3">
+                            <span class="inline-flex items-center gap-2 rounded-full border border-teal-300/30 bg-teal-400/15 px-3 py-1.5 text-xs font-semibold text-teal-100">
+                                <span class="flex h-4 w-4 items-center justify-center rounded-full bg-teal-300 text-[0.65rem] font-black text-slate-950" aria-hidden="true">&#10003;</span>
+                                {{ __('storefront.home.ratings.verified_badge') }}
+                            </span>
+
+                            <span class="flex items-center gap-1 text-amber-300" aria-label="{{ __('storefront.home.ratings.rating_aria', ['rating' => $testimonial['rating']]) }}">
+                                @for ($star = 0; $star < $testimonial['rating']; $star++)
+                                    <span aria-hidden="true">&#9733;</span>
+                                @endfor
+                                <span class="ml-2 text-sm font-semibold text-amber-200">{{ number_format($testimonial['rating'], 1) }}</span>
+                            </span>
+                        </div>
+
+                        <div class="relative mt-7">
+                            <span class="text-3xl font-black leading-none text-amber-300/35" aria-hidden="true">&ldquo;</span>
+                            <p class="mt-3 text-sm italic leading-7 text-slate-200">{{ $testimonial['comment'] }}</p>
+                        </div>
+
+                        <div class="mt-auto border-t border-white/10 pt-5">
+                            <div class="flex items-end justify-between gap-4">
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-3">
+                                        <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-teal-300/35 bg-teal-400/15 text-sm font-bold text-teal-200">
+                                            {{ mb_substr($testimonial['reviewer_name'], 0, 1) }}
+                                        </span>
+                                        <div class="min-w-0">
+                                            <p class="truncate text-sm font-semibold text-white">{{ $testimonial['reviewer_name'] }}</p>
+                                            <p class="mt-1 text-xs text-slate-500">{{ $testimonial['reviewed_at'] }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <a class="group/product min-w-28 max-w-36 text-right" href="{{ $testimonial['product_route'] }}">
+                                    <img
+                                        class="ml-auto aspect-square w-20 rounded-2xl border border-white/10 bg-slate-950 object-cover transition group-hover/product:border-teal-300/50"
+                                        src="{{ $testimonial['product_image_url'] !== '' ? $testimonial['product_image_url'] : $fallbackImage }}"
+                                        alt="{{ $testimonial['product_name'] }}"
+                                        loading="lazy"
+                                        onerror="this.onerror=null;this.src='{{ $fallbackImage }}';"
+                                    >
+                                    <span class="mt-3 line-clamp-2 block text-xs leading-5 text-slate-400 transition group-hover/product:text-slate-200">{{ $testimonial['product_name'] }}</span>
+                                    <span class="mt-1 inline-flex text-xs font-semibold text-teal-300 transition group-hover/product:text-teal-200">
+                                        {{ __('storefront.catalog.view_product') }} &rarr;
+                                    </span>
+                                </a>
+                            </div>
+                        </div>
+                    </article>
+                @endforeach
+            </div>
+        </div>
+    @endif
 </section>
