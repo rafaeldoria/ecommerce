@@ -81,6 +81,40 @@ class ProductsCrudTest extends TestCase
     }
 
     #[Test]
+    public function admin_product_create_uses_the_configured_product_image_disk(): void
+    {
+        config([
+            'catalog.product_images.disk' => 'product-images',
+            'catalog.product_images.directory' => 'catalog/products',
+        ]);
+        Storage::fake('product-images', [
+            'url' => 'https://images.example.test/assets',
+        ]);
+        Storage::fake('public');
+
+        $admin = User::factory()->admin()->create();
+        $game = Game::factory()->create();
+        $rarity = Rarity::factory()->create();
+
+        Livewire::actingAs($admin)
+            ->test(Products::class)
+            ->call('beginCreate')
+            ->set('name', 'Configured Disk Product')
+            ->set('image', $this->fakePngUpload('configured.png'))
+            ->set('quantity', 2)
+            ->set('price', 159900)
+            ->set('game_id', $game->getKey())
+            ->set('rarity_id', $rarity->getKey())
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $product = Product::query()->where('name', 'Configured Disk Product')->firstOrFail();
+
+        $this->assertStringStartsWith('https://images.example.test/assets/catalog/products/', $product->url_img);
+        $this->assertCount(1, Storage::disk('product-images')->allFiles('catalog/products'));
+    }
+
+    #[Test]
     public function product_update_keeps_the_current_image_when_no_replacement_is_uploaded(): void
     {
         Storage::fake('public');
