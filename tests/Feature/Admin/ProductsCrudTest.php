@@ -19,6 +19,16 @@ class ProductsCrudTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config([
+            'catalog.product_images.disk' => 'public',
+            'catalog.product_images.directory' => 'products',
+        ]);
+    }
+
     #[Test]
     public function admin_can_create_update_and_delete_products_from_the_web_page(): void
     {
@@ -78,6 +88,40 @@ class ProductsCrudTest extends TestCase
             ->assertSee(__('admin.products.messages.deleted'));
 
         $this->assertSoftDeleted('products', ['id' => $product->getKey()]);
+    }
+
+    #[Test]
+    public function admin_product_create_uses_the_configured_product_image_disk(): void
+    {
+        config([
+            'catalog.product_images.disk' => 'product-images',
+            'catalog.product_images.directory' => 'catalog/products',
+        ]);
+        Storage::fake('product-images', [
+            'url' => 'https://images.example.test/assets',
+        ]);
+        Storage::fake('public');
+
+        $admin = User::factory()->admin()->create();
+        $game = Game::factory()->create();
+        $rarity = Rarity::factory()->create();
+
+        Livewire::actingAs($admin)
+            ->test(Products::class)
+            ->call('beginCreate')
+            ->set('name', 'Configured Disk Product')
+            ->set('image', $this->fakePngUpload('configured.png'))
+            ->set('quantity', 2)
+            ->set('price', 159900)
+            ->set('game_id', $game->getKey())
+            ->set('rarity_id', $rarity->getKey())
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $product = Product::query()->where('name', 'Configured Disk Product')->firstOrFail();
+
+        $this->assertStringStartsWith('https://images.example.test/assets/catalog/products/', $product->url_img);
+        $this->assertCount(1, Storage::disk('product-images')->allFiles('catalog/products'));
     }
 
     #[Test]
