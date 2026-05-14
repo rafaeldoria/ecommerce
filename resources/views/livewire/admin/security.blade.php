@@ -100,13 +100,22 @@
                 </div>
 
                 @if ($admin->hasConfirmedMfa())
-                    <button
-                        class="mt-5 inline-flex items-center rounded-2xl border border-zinc-700 px-5 py-3 text-sm font-semibold text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-950"
-                        type="button"
-                        wire:click="regenerateRecoveryCodes"
-                    >
-                        {{ __('admin.security.regenerate_recovery_codes') }}
-                    </button>
+                    <div class="mt-5 flex flex-wrap gap-3">
+                        <a
+                            class="inline-flex items-center rounded-2xl bg-emerald-400 px-5 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-300"
+                            href="{{ route('admin.dashboard') }}"
+                        >
+                            {{ __('admin.security.continue_to_dashboard') }}
+                        </a>
+
+                        <button
+                            class="inline-flex items-center rounded-2xl border border-zinc-700 px-5 py-3 text-sm font-semibold text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-950"
+                            type="button"
+                            wire:click="regenerateRecoveryCodes"
+                        >
+                            {{ __('admin.security.regenerate_recovery_codes') }}
+                        </button>
+                    </div>
                 @endif
             @elseif ($admin->hasConfirmedMfa())
                 <p class="mt-5 rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-400">

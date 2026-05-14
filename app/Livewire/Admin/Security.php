@@ -66,9 +66,12 @@ class Security extends Component
 
         $confirmAdminMfaSetupAction->execute($this->admin(), trim((string) $validated['confirmationCode']));
 
+        $admin = $this->admin()->refresh();
+        Auth::setUser($admin);
+
         $this->setupInProgress = false;
         $this->confirmationCode = '';
-        $this->recoveryCodes = $this->admin()->refresh()->recoveryCodes();
+        $this->recoveryCodes = $admin->recoveryCodes();
         $this->statusMessage = __('admin.security.messages.enabled');
     }
 

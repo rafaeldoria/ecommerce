@@ -216,7 +216,9 @@ class AdminMfaTest extends TestCase
             ->set('confirmationCode', $confirmationCode)
             ->call('confirmSetup')
             ->assertHasNoErrors()
-            ->assertSee(__('admin.security.recovery_codes_copy_notice'));
+            ->assertSee(__('admin.security.recovery_codes_copy_notice'))
+            ->assertSee(__('admin.security.continue_to_dashboard'))
+            ->assertSee(route('admin.dashboard'), false);
 
         $firstRecoveryCode = $admin->refresh()->recoveryCodes()[0];
 

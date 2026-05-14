@@ -56,6 +56,7 @@ return [
         'recovery_codes_copy_notice' => 'Copie estes codigos de recuperacao agora. Eles nao serao exibidos novamente depois que voce sair ou atualizar esta pagina.',
         'recovery_codes_hidden' => 'Os codigos de recuperacao ficam ocultos depois do setup. Gere novos codigos se precisar de uma nova lista e copie imediatamente.',
         'recovery_codes_empty' => 'Os codigos de recuperacao aparecem depois que a configuracao de MFA comeca.',
+        'continue_to_dashboard' => 'Seguir para o dashboard',
         'regenerate_recovery_codes' => 'Gerar novos codigos de recuperacao',
         'disable_title' => 'Desativar MFA',
         'disable_summary' => 'Desativar MFA remove o segredo do autenticador e os codigos de recuperacao desta conta admin.',
