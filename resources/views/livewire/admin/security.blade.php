@@ -89,9 +89,13 @@
             <h2 class="text-xl font-semibold text-white">{{ __('admin.security.recovery_codes_title') }}</h2>
             <p class="mt-2 text-sm leading-6 text-zinc-300">{{ __('admin.security.recovery_codes_summary') }}</p>
 
-            @if ($admin->hasConfirmedMfa() || $setupInProgress)
+            @if ($recoveryCodes !== [])
+                <p class="mt-5 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+                    {{ __('admin.security.recovery_codes_copy_notice') }}
+                </p>
+
                 <div class="mt-5 grid gap-2">
-                    @foreach ($recoveryCodes ?: $admin->recoveryCodes() as $recoveryCode)
+                    @foreach ($recoveryCodes as $recoveryCode)
                         <code class="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100">{{ $recoveryCode }}</code>
                     @endforeach
                 </div>
@@ -105,6 +109,18 @@
                         {{ __('admin.security.regenerate_recovery_codes') }}
                     </button>
                 @endif
+            @elseif ($admin->hasConfirmedMfa())
+                <p class="mt-5 rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-400">
+                    {{ __('admin.security.recovery_codes_hidden') }}
+                </p>
+
+                <button
+                    class="mt-5 inline-flex items-center rounded-2xl border border-zinc-700 px-5 py-3 text-sm font-semibold text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-950"
+                    type="button"
+                    wire:click="regenerateRecoveryCodes"
+                >
+                    {{ __('admin.security.regenerate_recovery_codes') }}
+                </button>
             @else
                 <p class="mt-5 rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-400">
                     {{ __('admin.security.recovery_codes_empty') }}

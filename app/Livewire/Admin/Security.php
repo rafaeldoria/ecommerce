@@ -53,7 +53,7 @@ class Security extends Component
         $this->setupInProgress = true;
         $this->qrCodeSvg = $result->qrCodeSvg;
         $this->qrCodeUrl = $result->qrCodeUrl;
-        $this->recoveryCodes = $result->recoveryCodes;
+        $this->recoveryCodes = [];
         $this->confirmationCode = '';
         $this->statusMessage = null;
     }
@@ -68,9 +68,8 @@ class Security extends Component
 
         $this->setupInProgress = false;
         $this->confirmationCode = '';
+        $this->recoveryCodes = $this->admin()->refresh()->recoveryCodes();
         $this->statusMessage = __('admin.security.messages.enabled');
-
-        $this->admin()->refresh();
     }
 
     public function regenerateRecoveryCodes(RegenerateAdminMfaRecoveryCodesAction $regenerateAdminMfaRecoveryCodesAction): void

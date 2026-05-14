@@ -32,8 +32,10 @@ class Login extends Component
 
     public function mount(): void
     {
-        if (Auth::guard('web')->check() && Auth::user()?->isAdmin()) {
-            $this->redirectRoute('admin.dashboard', navigate: false);
+        $user = Auth::user();
+
+        if ($user instanceof User && $user->isAdmin()) {
+            $this->redirect($this->postLoginRoute($user), navigate: false);
         }
     }
 
@@ -229,7 +231,7 @@ class Login extends Component
 
     private function postLoginRoute(User $user): string
     {
-        if ((bool) config('security.admin_mfa.required', false) && !$user->hasConfirmedMfa()) {
+        if (!$user->hasConfirmedMfa()) {
             return route('admin.security');
         }
 

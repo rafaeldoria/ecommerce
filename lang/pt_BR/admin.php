@@ -53,6 +53,8 @@ return [
         'confirm_setup' => 'Confirmar MFA',
         'recovery_codes_title' => 'Codigos de recuperacao',
         'recovery_codes_summary' => 'Guarde estes codigos de uso unico em um gerenciador de senhas seguro. Cada codigo pode substituir o app autenticador uma vez.',
+        'recovery_codes_copy_notice' => 'Copie estes codigos de recuperacao agora. Eles nao serao exibidos novamente depois que voce sair ou atualizar esta pagina.',
+        'recovery_codes_hidden' => 'Os codigos de recuperacao ficam ocultos depois do setup. Gere novos codigos se precisar de uma nova lista e copie imediatamente.',
         'recovery_codes_empty' => 'Os codigos de recuperacao aparecem depois que a configuracao de MFA comeca.',
         'regenerate_recovery_codes' => 'Gerar novos codigos de recuperacao',
         'disable_title' => 'Desativar MFA',

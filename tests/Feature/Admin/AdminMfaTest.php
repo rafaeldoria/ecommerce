@@ -166,6 +166,71 @@ class AdminMfaTest extends TestCase
     }
 
     #[Test]
+    public function admin_menu_only_shows_security_until_mfa_is_confirmed(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)
+            ->get(route('admin.security'))
+            ->assertOk()
+            ->assertSee('href="'.route('admin.security').'"', false)
+            ->assertDontSee('href="'.route('admin.dashboard').'"', false)
+            ->assertDontSee('href="'.route('admin.games.index').'"', false)
+            ->assertDontSee('href="'.route('admin.products.index').'"', false)
+            ->assertDontSee('href="'.route('admin.orders.index').'"', false);
+    }
+
+    #[Test]
+    public function admin_menu_hides_security_after_mfa_is_confirmed(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->enableMfa($admin);
+
+        $this->actingAs($admin->refresh())
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('href="'.route('admin.dashboard').'"', false)
+            ->assertSee('href="'.route('admin.products.index').'"', false)
+            ->assertDontSee('href="'.route('admin.security').'"', false);
+    }
+
+    #[Test]
+    public function recovery_codes_are_only_visible_immediately_after_generation(): void
+    {
+        config(['security.admin_mfa.required' => false]);
+
+        $admin = User::factory()->admin()->create();
+
+        $component = Livewire::actingAs($admin)
+            ->test(Security::class)
+            ->call('startSetup')
+            ->assertSet('recoveryCodes', [])
+            ->assertDontSee(__('admin.security.recovery_codes_copy_notice'));
+
+        $admin->refresh();
+        $confirmationCode = $this->currentTotpCode($admin);
+
+        $component
+            ->set('confirmationCode', $confirmationCode)
+            ->call('confirmSetup')
+            ->assertHasNoErrors()
+            ->assertSee(__('admin.security.recovery_codes_copy_notice'));
+
+        $firstRecoveryCode = $admin->refresh()->recoveryCodes()[0];
+
+        $this->actingAs($admin->refresh())
+            ->get(route('admin.security'))
+            ->assertOk()
+            ->assertSee(__('admin.security.recovery_codes_hidden'))
+            ->assertDontSee($firstRecoveryCode);
+
+        Livewire::test(Security::class)
+            ->call('regenerateRecoveryCodes')
+            ->assertSee(__('admin.security.recovery_codes_copy_notice'));
+    }
+
+    #[Test]
     public function disable_mfa_requires_current_password(): void
     {
         $admin = User::factory()->admin()->create();

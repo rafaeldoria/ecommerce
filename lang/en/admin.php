@@ -53,6 +53,8 @@ return [
         'confirm_setup' => 'Confirm MFA',
         'recovery_codes_title' => 'Recovery codes',
         'recovery_codes_summary' => 'Store these single-use codes in a secure password manager. Each code can replace the authenticator app once.',
+        'recovery_codes_copy_notice' => 'Copy these recovery codes now. They will not be shown again after you leave or refresh this page.',
+        'recovery_codes_hidden' => 'Recovery codes are hidden after setup. Generate new codes if you need a fresh set, then copy them immediately.',
         'recovery_codes_empty' => 'Recovery codes appear after MFA setup starts.',
         'regenerate_recovery_codes' => 'Generate new recovery codes',
         'disable_title' => 'Disable MFA',

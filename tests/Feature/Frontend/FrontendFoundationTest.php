@@ -178,10 +178,13 @@ class FrontendFoundationTest extends TestCase
 
         $this->actingAs($admin)
             ->get(route('admin.dashboard'))
+            ->assertRedirect(route('admin.security'));
+
+        $this->get(route('admin.security'))
             ->assertOk()
-            ->assertSee('<title>Admin dashboard</title>', false)
-            ->assertSee(__('admin.dashboard.title'))
-            ->assertSee(__('admin.navigation.products'));
+            ->assertSee('<title>Admin security</title>', false)
+            ->assertSee('href="'.route('admin.security').'"', false)
+            ->assertDontSee('href="'.route('admin.products.index').'"', false);
     }
 
     #[Test]
@@ -212,7 +215,7 @@ class FrontendFoundationTest extends TestCase
             ->set('login', 'ops-admin')
             ->set('password', 'secret-pass')
             ->call('authenticate')
-            ->assertRedirect(route('admin.dashboard'));
+            ->assertRedirect(route('admin.security'));
 
         $this->assertAuthenticatedAs($admin);
     }
@@ -224,7 +227,7 @@ class FrontendFoundationTest extends TestCase
 
         $this->actingAs($admin)
             ->get(route('admin.login'))
-            ->assertRedirect(route('admin.dashboard'));
+            ->assertRedirect(route('admin.security'));
     }
 
     #[Test]
