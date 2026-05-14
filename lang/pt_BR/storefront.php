@@ -36,6 +36,31 @@ return [
         'featured_title' => 'Itens em destaque do catalogo ao vivo',
         'featured_link' => 'Ver todos os produtos',
         'no_featured_products' => 'Gere ou crie produtos para transformar esta area em uma vitrine mais forte.',
+        'ratings' => [
+            'eyebrow' => 'Avaliacoes recentes',
+            'title' => 'Compras verificadas por jogadores',
+            'summary' => 'Comentarios temporarios usados para validar a vitrine enquanto a loja ainda nao recebe avaliacoes reais dos clientes.',
+            'link' => 'Explorar produtos avaliados',
+            'verified_badge' => 'Compra verificada',
+            'rating_aria' => 'Avaliacao de :rating de 5 estrelas',
+            'cards' => [
+                [
+                    'reviewer_name' => 'Slaughter',
+                    'reviewed_at' => '19/04/2026',
+                    'comment' => 'Atendimento direto e item certo no pedido. A equipe explicou o proximo passo sem enrolar.',
+                ],
+                [
+                    'reviewer_name' => 'Mario',
+                    'reviewed_at' => '01/03/2026',
+                    'comment' => 'Gostei do preco e da clareza no checkout. Deu para confirmar tudo antes de seguir.',
+                ],
+                [
+                    'reviewer_name' => 'MmzHrrdb',
+                    'reviewed_at' => '21/02/2026',
+                    'comment' => 'Produto bem apresentado e suporte facil de chamar. Voltaria para olhar outros itens.',
+                ],
+            ],
+        ],
     ],
     'catalog' => [
         'eyebrow' => 'Troque de game instantaneamente',

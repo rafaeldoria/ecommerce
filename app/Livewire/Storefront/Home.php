@@ -18,8 +18,7 @@ class Home extends Component
     public function render(
         ListStorefrontGamesQuery $listStorefrontGamesQuery,
         ListFeaturedStorefrontProductsQuery $listFeaturedStorefrontProductsQuery,
-    )
-    {
+    ) {
         $featuredProducts = $listFeaturedStorefrontProductsQuery->execute(6)
             ->map(fn (Product $product): array => [
                 'id' => $product->getKey(),
@@ -35,7 +34,39 @@ class Home extends Component
         return $this->pageView('livewire.storefront.home', [
             'games' => $listStorefrontGamesQuery->execute(),
             'featuredProducts' => $featuredProducts,
+            'ratingTestimonials' => $this->ratingTestimonials($featuredProducts),
         ]);
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $featuredProducts
+     * @return array<int, array<string, mixed>>
+     */
+    private function ratingTestimonials(array $featuredProducts): array
+    {
+        $copies = trans('storefront.home.ratings.cards');
+
+        if (!is_array($copies)) {
+            return [];
+        }
+
+        return collect($featuredProducts)
+            ->take(3)
+            ->values()
+            ->map(function (array $product, int $index) use ($copies): array {
+                $copy = $copies[$index] ?? [];
+
+                return [
+                    'reviewer_name' => $copy['reviewer_name'] ?? '',
+                    'reviewed_at' => $copy['reviewed_at'] ?? '',
+                    'comment' => $copy['comment'] ?? '',
+                    'rating' => 5,
+                    'product_name' => $product['name'],
+                    'product_image_url' => $product['image_url'],
+                    'product_route' => $product['route'],
+                ];
+            })
+            ->all();
     }
 
     protected function titleKey(): string

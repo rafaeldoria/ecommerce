@@ -109,6 +109,44 @@ class FrontendFoundationTest extends TestCase
     }
 
     #[Test]
+    public function home_page_renders_three_front_only_verified_rating_cards(): void
+    {
+        $game = Game::factory()->create(['name' => 'Dota 2']);
+        $rarity = Rarity::factory()->create(['name' => 'Immortal']);
+
+        $products = collect([
+            ['name' => 'Aegis Relic', 'price' => 5000],
+            ['name' => 'Dragon Hook', 'price' => 4000],
+            ['name' => 'Golden Mantle', 'price' => 3000],
+            ['name' => 'Backup Blade', 'price' => 2000],
+        ])->map(fn (array $product): Product => Product::factory()->create([
+            'name' => $product['name'],
+            'price' => $product['price'],
+            'game_id' => $game->id,
+            'rarity_id' => $rarity->id,
+        ]));
+
+        $response = $this->get(route('storefront.home'))
+            ->assertOk()
+            ->assertSee(__('storefront.home.ratings.title'))
+            ->assertSee(__('storefront.home.ratings.cards.0.comment'))
+            ->assertSee(__('storefront.home.ratings.cards.1.comment'))
+            ->assertSee(__('storefront.home.ratings.cards.2.comment'));
+
+        $html = $response->getContent();
+
+        $this->assertSame(3, substr_count($html, 'group/product'));
+
+        preg_match_all('/<a class="group\/product[^"]*" href="([^"]+)"/', $html, $matches);
+
+        $this->assertSame([
+            route('storefront.products.show', ['product' => $products[0]]),
+            route('storefront.products.show', ['product' => $products[1]]),
+            route('storefront.products.show', ['product' => $products[2]]),
+        ], $matches[1]);
+    }
+
+    #[Test]
     public function support_storefront_routes_are_available(): void
     {
         $this->get(route('storefront.about'))

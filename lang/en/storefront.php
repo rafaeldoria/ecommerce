@@ -36,6 +36,31 @@ return [
         'featured_title' => 'Featured items from the live catalog',
         'featured_link' => 'See all products',
         'no_featured_products' => 'Seed or create products to turn this area into a stronger storefront showcase.',
+        'ratings' => [
+            'eyebrow' => 'Recent ratings',
+            'title' => 'Verified purchases from players',
+            'summary' => 'Temporary comments used to validate the storefront while the shop does not collect real customer ratings yet.',
+            'link' => 'Explore rated products',
+            'verified_badge' => 'Verified purchase',
+            'rating_aria' => ':rating out of 5 star rating',
+            'cards' => [
+                [
+                    'reviewer_name' => 'Slaughter',
+                    'reviewed_at' => '04/19/2026',
+                    'comment' => 'Direct support and the right item in the order. The team made the next step clear.',
+                ],
+                [
+                    'reviewer_name' => 'Mario',
+                    'reviewed_at' => '03/01/2026',
+                    'comment' => 'The price felt fair and checkout was clear. I could confirm everything before moving on.',
+                ],
+                [
+                    'reviewer_name' => 'MmzHrrdb',
+                    'reviewed_at' => '02/21/2026',
+                    'comment' => 'The product was easy to inspect and support was easy to reach. I would browse again.',
+                ],
+            ],
+        ],
     ],
     'catalog' => [
         'eyebrow' => 'Switch games instantly',
