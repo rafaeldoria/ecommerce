@@ -25,6 +25,7 @@
                             <a class="transition hover:text-white" href="{{ route('admin.rarities.index') }}">{{ __('admin.navigation.rarities') }}</a>
                             <a class="transition hover:text-white" href="{{ route('admin.products.index') }}">{{ __('admin.navigation.products') }}</a>
                             <a class="transition hover:text-white" href="{{ route('admin.orders.index') }}">{{ __('admin.navigation.orders') }}</a>
+                            <a class="transition hover:text-white" href="{{ route('admin.security') }}">{{ __('admin.navigation.security') }}</a>
 
                             <form method="POST" action="{{ route('admin.logout') }}">
                                 @csrf

@@ -10,4 +10,10 @@ return [
 
     'mercado_pago_webhook_max_bytes' => (int) env('MERCADO_PAGO_WEBHOOK_MAX_BYTES', 65536),
     'mercado_pago_webhook_retention_days' => (int) env('MERCADO_PAGO_WEBHOOK_RETENTION_DAYS', 90),
+
+    'admin_mfa' => [
+        'required' => (bool) env('ADMIN_MFA_REQUIRED', false),
+        'challenge_ttl_seconds' => (int) env('ADMIN_MFA_CHALLENGE_TTL_SECONDS', 300),
+        'max_attempts' => (int) env('ADMIN_MFA_MAX_ATTEMPTS', 5),
+    ],
 ];

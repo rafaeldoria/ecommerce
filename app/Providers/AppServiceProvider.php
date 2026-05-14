@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Laravel\Fortify\Fortify;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,6 +22,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        Fortify::ignoreRoutes();
+
         $this->app->bind(CartStore::class, SessionCartStore::class);
         $this->app->bind(CheckoutPreferenceGateway::class, MercadoPagoCheckoutPreferenceGateway::class);
         $this->app->bind(PaymentDetailsGateway::class, MercadoPagoPaymentDetailsGateway::class);

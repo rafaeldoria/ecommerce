@@ -3,8 +3,13 @@
 namespace Tests\Feature\Api\Admin;
 
 use App\Models\User;
+use App\Modules\Admin\Actions\ConfirmAdminMfaSetupAction;
+use App\Modules\Admin\Actions\StartAdminMfaSetupAction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
+use Laravel\Fortify\Fortify;
 use PHPUnit\Framework\Attributes\Test;
+use PragmaRX\Google2FA\Google2FA;
 use Tests\TestCase;
 
 class AuthApiTest extends TestCase
@@ -59,6 +64,151 @@ class AuthApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.user.id', $admin->getKey())
             ->assertJsonPath('data.user.email', 'admin@example.com');
+    }
+
+    #[Test]
+    public function mfa_enabled_admin_login_returns_challenge_without_creating_token(): void
+    {
+        $admin = User::factory()->admin()->create([
+            'username' => 'ops-admin',
+            'password' => 'secret-pass',
+        ]);
+
+        $this->enableMfa($admin);
+
+        $this->postJson('/api/admin/auth/login', [
+            'username' => 'ops-admin',
+            'password' => 'secret-pass',
+            'device_name' => 'postman',
+        ])
+            ->assertOk()
+            ->assertJsonPath('message', __('general.api.admin.auth.mfa_required'))
+            ->assertJsonPath('data.mfa_required', true)
+            ->assertJsonPath('data.user.id', $admin->getKey())
+            ->assertJson(fn ($json) => $json
+                ->whereType('data.challenge_id', 'string')
+                ->whereType('data.expires_at', 'string')
+                ->missing('data.token')
+                ->etc()
+            );
+
+        $this->assertDatabaseMissing('personal_access_tokens', [
+            'tokenable_type' => User::class,
+            'tokenable_id' => $admin->getKey(),
+            'name' => 'postman',
+        ]);
+    }
+
+    #[Test]
+    public function valid_mfa_challenge_creates_admin_token(): void
+    {
+        $admin = User::factory()->admin()->create([
+            'username' => 'ops-admin',
+            'password' => 'secret-pass',
+        ]);
+
+        $this->enableMfa($admin);
+        $challengeId = $this->startApiMfaChallenge();
+        $this->travel(31)->seconds();
+
+        $this->postJson('/api/admin/auth/mfa-challenge', [
+            'challenge_id' => $challengeId,
+            'code' => $this->currentTotpCode($admin->refresh()),
+        ])
+            ->assertOk()
+            ->assertJsonPath('message', __('general.api.admin.auth.logged_in'))
+            ->assertJson(fn ($json) => $json
+                ->whereType('data.token', 'string')
+                ->where('data.user.id', $admin->getKey())
+                ->etc()
+            );
+
+        $this->assertDatabaseHas('personal_access_tokens', [
+            'tokenable_type' => User::class,
+            'tokenable_id' => $admin->getKey(),
+            'name' => 'postman',
+        ]);
+    }
+
+    #[Test]
+    public function mfa_recovery_code_is_single_use_for_api_login(): void
+    {
+        $admin = User::factory()->admin()->create([
+            'username' => 'ops-admin',
+            'password' => 'secret-pass',
+        ]);
+
+        $recoveryCode = $this->enableMfa($admin)->firstRecoveryCode;
+        $challengeId = $this->startApiMfaChallenge();
+
+        $this->postJson('/api/admin/auth/mfa-challenge', [
+            'challenge_id' => $challengeId,
+            'recovery_code' => $recoveryCode,
+        ])->assertOk();
+
+        $secondChallengeId = $this->startApiMfaChallenge();
+
+        $response = $this->postJson('/api/admin/auth/mfa-challenge', [
+            'challenge_id' => $secondChallengeId,
+            'recovery_code' => $recoveryCode,
+        ]);
+
+        $this->assertProblemDetails(
+            $response,
+            'validation_failed',
+            422,
+            __('general.api.errors.validation_failed'),
+        );
+    }
+
+    #[Test]
+    public function expired_mfa_challenge_returns_problem_details(): void
+    {
+        $admin = User::factory()->admin()->create([
+            'username' => 'ops-admin',
+            'password' => 'secret-pass',
+        ]);
+
+        $this->enableMfa($admin);
+        $challengeId = $this->startApiMfaChallenge();
+
+        Cache::flush();
+
+        $response = $this->postJson('/api/admin/auth/mfa-challenge', [
+            'challenge_id' => $challengeId,
+            'code' => '123456',
+        ]);
+
+        $this->assertProblemDetails(
+            $response,
+            'mfa_challenge_expired',
+            422,
+            __('general.errors.mfa_challenge_expired'),
+        );
+    }
+
+    #[Test]
+    public function required_mfa_unconfirmed_admin_cannot_log_in_through_api(): void
+    {
+        config(['security.admin_mfa.required' => true]);
+
+        User::factory()->admin()->create([
+            'username' => 'ops-admin',
+            'password' => 'secret-pass',
+        ]);
+
+        $response = $this->postJson('/api/admin/auth/login', [
+            'username' => 'ops-admin',
+            'password' => 'secret-pass',
+            'device_name' => 'postman',
+        ]);
+
+        $this->assertProblemDetails(
+            $response,
+            'mfa_setup_required',
+            409,
+            __('general.errors.mfa_setup_required'),
+        );
     }
 
     #[Test]
@@ -242,5 +392,36 @@ class AuthApiTest extends TestCase
 
         $response
             ->assertJsonValidationErrors(['username', 'email', 'device_name']);
+    }
+
+    private function enableMfa(User $admin): object
+    {
+        $result = app(StartAdminMfaSetupAction::class)->execute($admin);
+        $code = $this->currentTotpCode($admin->refresh());
+
+        app(ConfirmAdminMfaSetupAction::class)->execute($admin, $code);
+        Cache::flush();
+
+        return (object) [
+            'firstRecoveryCode' => $result->recoveryCodes[0],
+        ];
+    }
+
+    private function currentTotpCode(User $admin): string
+    {
+        $secret = Fortify::currentEncrypter()->decrypt((string) $admin->two_factor_secret);
+
+        return app(Google2FA::class)->getCurrentOtp($secret);
+    }
+
+    private function startApiMfaChallenge(): string
+    {
+        $response = $this->postJson('/api/admin/auth/login', [
+            'username' => 'ops-admin',
+            'password' => 'secret-pass',
+            'device_name' => 'postman',
+        ])->assertOk();
+
+        return (string) $response->json('data.challenge_id');
     }
 }

@@ -1,8 +1,11 @@
 <?php
 
 use App\Http\Middleware\ApplySessionLocale;
+use App\Http\Middleware\EnsureAdminMfaIsConfirmed;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Responses\ApiProblemDetails;
+use App\Modules\Admin\Exceptions\AdminMfaChallengeExpired;
+use App\Modules\Admin\Exceptions\AdminMfaSetupRequired;
 use App\Modules\Admin\Exceptions\InvalidAdminCredentials;
 use App\Modules\Cart\Exceptions\EmptyCart;
 use App\Modules\Cart\Exceptions\InvalidCartQuantity;
@@ -46,6 +49,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'admin' => EnsureUserIsAdmin::class,
+            'admin.mfa' => EnsureAdminMfaIsConfirmed::class,
         ]);
 
         $middleware->web(append: [
@@ -127,6 +131,22 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             return ApiProblemDetails::make($request, 'invalid_admin_credentials', $exception->getMessage(), 422);
+        });
+
+        $exceptions->render(function (AdminMfaSetupRequired $exception, Request $request): ?JsonResponse {
+            if (!$request->is('api/*')) {
+                return null;
+            }
+
+            return ApiProblemDetails::make($request, 'mfa_setup_required', $exception->getMessage(), 409);
+        });
+
+        $exceptions->render(function (AdminMfaChallengeExpired $exception, Request $request): ?JsonResponse {
+            if (!$request->is('api/*')) {
+                return null;
+            }
+
+            return ApiProblemDetails::make($request, 'mfa_challenge_expired', $exception->getMessage(), 422);
         });
 
         $exceptions->render(function (CatalogResourceInUse $exception, Request $request): ?JsonResponse {
