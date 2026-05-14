@@ -206,6 +206,7 @@ class AdminMfaTest extends TestCase
             ->test(Security::class)
             ->call('startSetup')
             ->assertSet('recoveryCodes', [])
+            ->assertDontSee('otpauth://totp')
             ->assertDontSee(__('admin.security.recovery_codes_copy_notice'));
 
         $admin->refresh();

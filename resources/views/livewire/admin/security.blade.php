@@ -53,7 +53,6 @@
                         <div class="inline-block rounded-xl bg-white p-3 text-zinc-950">
                             {!! $qrCodeSvg !!}
                         </div>
-                        <p class="mt-3 break-all text-xs text-zinc-400">{{ $qrCodeUrl }}</p>
                     </div>
 
                     <form class="space-y-4" wire:submit="confirmSetup">
