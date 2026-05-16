@@ -34,6 +34,7 @@ return [
         'mfa_eyebrow' => 'Second step',
         'mfa_title' => 'Authenticator code',
         'mfa_summary' => 'Enter the code from your authenticator app, or use one recovery code.',
+        'mfa_summary_without_recovery' => 'Enter the code from your authenticator app.',
         'mfa_code_label' => 'Authentication code',
         'recovery_code_label' => 'Recovery code',
         'mfa_submit' => 'Verify and enter',

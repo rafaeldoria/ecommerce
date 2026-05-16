@@ -13,6 +13,7 @@ return [
 
     'admin_mfa' => [
         'required' => (bool) env('ADMIN_MFA_REQUIRED', false),
+        'recovery_code_show' => (bool) env('ADMIN_MFA_RECOVERY_CODE_SHOW', false),
         'challenge_ttl_seconds' => (int) env('ADMIN_MFA_CHALLENGE_TTL_SECONDS', 300),
         'max_attempts' => (int) env('ADMIN_MFA_MAX_ATTEMPTS', 5),
     ],

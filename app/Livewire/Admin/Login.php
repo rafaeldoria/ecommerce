@@ -91,10 +91,14 @@ class Login extends Component
 
     public function verifyMfa(VerifyAdminMfaChallengeAction $verifyAdminMfaChallengeAction)
     {
-        $validated = $this->validate([
-            'mfaCode' => ['nullable', 'string', 'required_without:recoveryCode'],
-            'recoveryCode' => ['nullable', 'string', 'required_without:mfaCode'],
-        ]);
+        $validated = $this->recoveryCodeChallengeEnabled()
+            ? $this->validate([
+                'mfaCode' => ['nullable', 'string', 'required_without:recoveryCode'],
+                'recoveryCode' => ['nullable', 'string', 'required_without:mfaCode'],
+            ])
+            : $this->validate([
+                'mfaCode' => ['required', 'string'],
+            ]);
 
         $user = $this->pendingMfaUser();
 
@@ -118,7 +122,9 @@ class Login extends Component
             $verifyAdminMfaChallengeAction->execute(
                 $user,
                 isset($validated['mfaCode']) ? trim((string) $validated['mfaCode']) : null,
-                isset($validated['recoveryCode']) ? trim((string) $validated['recoveryCode']) : null,
+                $this->recoveryCodeChallengeEnabled() && isset($validated['recoveryCode'])
+                    ? trim((string) $validated['recoveryCode'])
+                    : null,
             );
         } catch (ValidationException $exception) {
             $this->recordMfaAttempt();
@@ -146,7 +152,9 @@ class Login extends Component
 
     public function render()
     {
-        return $this->pageView('livewire.admin.login');
+        return $this->pageView('livewire.admin.login', [
+            'showRecoveryCodeChallenge' => $this->recoveryCodeChallengeEnabled(),
+        ]);
     }
 
     protected function titleKey(): string
@@ -250,5 +258,10 @@ class Login extends Component
         $ttl = (int) config('security.admin_mfa.challenge_ttl_seconds', 300);
 
         return $ttl > 0 ? $ttl : 300;
+    }
+
+    private function recoveryCodeChallengeEnabled(): bool
+    {
+        return (bool) config('security.admin_mfa.recovery_code_show', false);
     }
 }

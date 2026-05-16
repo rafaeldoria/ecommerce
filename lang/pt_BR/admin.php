@@ -34,6 +34,7 @@ return [
         'mfa_eyebrow' => 'Segunda etapa',
         'mfa_title' => 'Codigo autenticador',
         'mfa_summary' => 'Digite o codigo do app autenticador ou use um codigo de recuperacao.',
+        'mfa_summary_without_recovery' => 'Digite o codigo do app autenticador.',
         'mfa_code_label' => 'Codigo de autenticacao',
         'recovery_code_label' => 'Codigo de recuperacao',
         'mfa_submit' => 'Verificar e entrar',

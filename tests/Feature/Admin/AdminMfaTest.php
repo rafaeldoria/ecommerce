@@ -70,6 +70,8 @@ class AdminMfaTest extends TestCase
     #[Test]
     public function recovery_code_works_once_for_web_login(): void
     {
+        config(['security.admin_mfa.recovery_code_show' => true]);
+
         $admin = User::factory()->admin()->create([
             'username' => 'ops-admin',
             'password' => 'secret-pass',
@@ -97,6 +99,32 @@ class AdminMfaTest extends TestCase
             ->set('recoveryCode', $recoveryCode)
             ->call('verifyMfa')
             ->assertHasErrors(['recovery_code']);
+    }
+
+    #[Test]
+    public function recovery_code_input_is_hidden_for_web_login_when_disabled(): void
+    {
+        config(['security.admin_mfa.recovery_code_show' => false]);
+
+        $admin = User::factory()->admin()->create([
+            'username' => 'ops-admin',
+            'password' => 'secret-pass',
+        ]);
+
+        $recoveryCode = $this->enableMfa($admin)->firstRecoveryCode;
+
+        Livewire::test(Login::class)
+            ->set('login', 'ops-admin')
+            ->set('password', 'secret-pass')
+            ->call('authenticate')
+            ->assertSet('showMfaChallenge', true)
+            ->assertSee(__('admin.auth.mfa_summary_without_recovery'))
+            ->assertDontSee(__('admin.auth.recovery_code_label'))
+            ->set('recoveryCode', $recoveryCode)
+            ->call('verifyMfa')
+            ->assertHasErrors(['mfaCode']);
+
+        $this->assertGuest();
     }
 
     #[Test]
