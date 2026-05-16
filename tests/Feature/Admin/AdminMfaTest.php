@@ -46,6 +46,24 @@ class AdminMfaTest extends TestCase
     }
 
     #[Test]
+    public function setup_keeps_existing_unconfirmed_secret_and_recovery_codes(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $firstResult = app(StartAdminMfaSetupAction::class)->execute($admin);
+        $admin->refresh();
+        $firstSecret = $admin->two_factor_secret;
+        $firstRecoveryCodes = $admin->two_factor_recovery_codes;
+
+        $secondResult = app(StartAdminMfaSetupAction::class)->execute($admin->refresh());
+
+        $this->assertSame($firstSecret, $admin->refresh()->two_factor_secret);
+        $this->assertSame($firstRecoveryCodes, $admin->two_factor_recovery_codes);
+        $this->assertSame($firstResult->qrCodeUrl, $secondResult->qrCodeUrl);
+        $this->assertSame($firstResult->recoveryCodes, $secondResult->recoveryCodes);
+    }
+
+    #[Test]
     public function valid_totp_confirms_mfa_and_invalid_totp_fails(): void
     {
         $admin = User::factory()->admin()->create();
@@ -151,6 +169,45 @@ class AdminMfaTest extends TestCase
             ->assertRedirect(route('admin.dashboard'));
 
         $this->assertAuthenticatedAs($admin);
+    }
+
+    #[Test]
+    public function web_mfa_attempt_limit_survives_restarting_the_challenge(): void
+    {
+        config(['security.admin_mfa.max_attempts' => 2]);
+
+        $admin = User::factory()->admin()->create([
+            'username' => 'ops-admin',
+            'password' => 'secret-pass',
+        ]);
+
+        $this->enableMfa($admin);
+
+        Livewire::test(Login::class)
+            ->set('login', 'ops-admin')
+            ->set('password', 'secret-pass')
+            ->call('authenticate')
+            ->set('mfaCode', '000000')
+            ->call('verifyMfa')
+            ->assertHasErrors(['code']);
+
+        Livewire::test(Login::class)
+            ->set('login', 'ops-admin')
+            ->set('password', 'secret-pass')
+            ->call('authenticate')
+            ->set('mfaCode', '000000')
+            ->call('verifyMfa')
+            ->assertHasErrors(['code']);
+
+        Livewire::test(Login::class)
+            ->set('login', 'ops-admin')
+            ->set('password', 'secret-pass')
+            ->call('authenticate')
+            ->set('mfaCode', $this->currentTotpCode($admin->refresh()))
+            ->call('verifyMfa')
+            ->assertHasErrors(['mfaCode' => __('admin.security.errors.too_many_attempts')]);
+
+        $this->assertGuest();
     }
 
     #[Test]

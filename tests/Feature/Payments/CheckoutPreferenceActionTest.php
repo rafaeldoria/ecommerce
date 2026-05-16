@@ -38,6 +38,7 @@ class CheckoutPreferenceActionTest extends TestCase
     {
         Event::fake();
         URL::forceRootUrl('https://gains-bootlace-slacking.ngrok-free.dev');
+        URL::forceScheme('https');
 
         $gateway = new class implements CheckoutPreferenceGateway
         {

@@ -21,6 +21,14 @@ class StartAdminMfaSetupAction
             return new AdminMfaSetupResult('', '', $admin->recoveryCodes());
         }
 
+        if ($admin->two_factor_secret !== null && $admin->two_factor_recovery_codes !== null) {
+            return new AdminMfaSetupResult(
+                qrCodeSvg: $admin->twoFactorQrCodeSvg(),
+                qrCodeUrl: $admin->twoFactorQrCodeUrl(),
+                recoveryCodes: $admin->recoveryCodes(),
+            );
+        }
+
         $secretLength = (int) config('fortify-options.two-factor-authentication.secret-length', 16);
         $secret = $this->provider->generateSecretKey($secretLength > 0 ? $secretLength : 16);
         $recoveryCodes = Collection::times(8, fn (): string => RecoveryCode::generate())->all();

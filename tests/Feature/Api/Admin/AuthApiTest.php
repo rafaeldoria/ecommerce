@@ -16,6 +16,13 @@ class AuthApiTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config(['security.admin_mfa.required' => false]);
+    }
+
     #[Test]
     public function admin_can_log_in_with_username(): void
     {
@@ -324,6 +331,25 @@ class AuthApiTest extends TestCase
             ->assertJsonPath('message', __('general.api.admin.auth.profile_retrieved'))
             ->assertJsonPath('data.id', $admin->getKey())
             ->assertJsonPath('data.username', $admin->username);
+    }
+
+    #[Test]
+    public function required_mfa_blocks_existing_admin_api_tokens_without_confirmed_mfa(): void
+    {
+        config(['security.admin_mfa.required' => true]);
+
+        $admin = User::factory()->admin()->create();
+        $token = $admin->createToken('legacy-dashboard');
+
+        $response = $this->withToken($token->plainTextToken)
+            ->getJson('/api/admin/me');
+
+        $this->assertProblemDetails(
+            $response,
+            'mfa_setup_required',
+            409,
+            __('general.errors.mfa_setup_required'),
+        );
     }
 
     #[Test]

@@ -110,7 +110,7 @@ class Login extends Component
             ]);
         }
 
-        if ($this->tooManyMfaAttempts()) {
+        if ($this->tooManyMfaAttempts($user)) {
             $this->clearMfaChallenge();
 
             throw ValidationException::withMessages([
@@ -127,10 +127,12 @@ class Login extends Component
                     : null,
             );
         } catch (ValidationException $exception) {
-            $this->recordMfaAttempt();
+            $this->recordMfaAttempt($user);
 
             throw $exception;
         }
+
+        RateLimiter::clear($this->mfaRateLimitKey($user));
 
         $this->clearMfaChallenge();
 
@@ -184,7 +186,6 @@ class Login extends Component
         session()->put('admin_mfa_login', [
             'user_id' => $user->getKey(),
             'expires_at' => now()->addSeconds($this->challengeTtlSeconds())->getTimestamp(),
-            'attempts' => 0,
         ]);
     }
 
@@ -205,28 +206,14 @@ class Login extends Component
         return $user instanceof User && $user->isAdmin() ? $user : null;
     }
 
-    private function recordMfaAttempt(): void
+    private function recordMfaAttempt(User $user): void
     {
-        $payload = session()->get('admin_mfa_login', []);
-
-        if (!is_array($payload)) {
-            return;
-        }
-
-        $payload['attempts'] = (int) ($payload['attempts'] ?? 0) + 1;
-
-        session()->put('admin_mfa_login', $payload);
+        RateLimiter::hit($this->mfaRateLimitKey($user), $this->challengeTtlSeconds());
     }
 
-    private function tooManyMfaAttempts(): bool
+    private function tooManyMfaAttempts(User $user): bool
     {
-        $payload = session()->get('admin_mfa_login', []);
-
-        if (!is_array($payload)) {
-            return true;
-        }
-
-        return (int) ($payload['attempts'] ?? 0) >= $this->maxAttempts();
+        return RateLimiter::tooManyAttempts($this->mfaRateLimitKey($user), $this->maxAttempts());
     }
 
     private function clearMfaChallenge(): void
@@ -263,5 +250,10 @@ class Login extends Component
     private function recoveryCodeChallengeEnabled(): bool
     {
         return (bool) config('security.admin_mfa.recovery_code_show', false);
+    }
+
+    private function mfaRateLimitKey(User $user): string
+    {
+        return sprintf('admin-mfa:%s|%s', $user->getKey(), (string) request()->ip());
     }
 }

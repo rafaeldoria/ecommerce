@@ -165,6 +165,8 @@ class FrontendFoundationTest extends TestCase
     #[Test]
     public function admin_routes_are_separate_and_protected_after_login(): void
     {
+        config(['security.admin_mfa.required' => true]);
+
         $this->get(route('admin.login'))
             ->assertOk()
             ->assertSee('<title>Admin login</title>', false)

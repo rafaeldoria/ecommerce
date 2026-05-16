@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\ApplySessionLocale;
+use App\Http\Middleware\EnsureAdminApiMfaIsConfirmed;
 use App\Http\Middleware\EnsureAdminMfaIsConfirmed;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Responses\ApiProblemDetails;
@@ -49,6 +50,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'admin' => EnsureUserIsAdmin::class,
+            'admin.api.mfa' => EnsureAdminApiMfaIsConfirmed::class,
             'admin.mfa' => EnsureAdminMfaIsConfirmed::class,
         ]);
 
