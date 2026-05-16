@@ -14,17 +14,30 @@
         <div class="flex min-h-screen flex-col">
             <header class="border-b border-zinc-800 bg-zinc-950">
                 <nav class="mx-auto flex max-w-7xl items-center justify-between gap-6 px-4 py-4" aria-label="{{ __('admin.navigation.primary') }}">
-                    <a class="text-base font-semibold tracking-[0.18em] text-white uppercase" href="{{ auth()->check() ? route('admin.dashboard') : route('admin.login') }}">
+                    <a class="text-base font-semibold tracking-[0.18em] text-white uppercase" href="{{ auth()->check() ? (auth()->user()?->hasConfirmedMfa() ? route('admin.dashboard') : route('admin.security')) : route('admin.login') }}">
                         {{ __('admin.brand.name') }}
                     </a>
 
                     @auth
+                        @php
+                            $adminUser = auth()->user();
+                            $hasConfirmedMfa = $adminUser?->hasConfirmedMfa() ?? false;
+                        @endphp
+
                         <div class="flex flex-wrap items-center gap-4 text-sm text-zinc-300">
-                            <a class="transition hover:text-white" href="{{ route('admin.dashboard') }}">{{ __('admin.navigation.dashboard') }}</a>
-                            <a class="transition hover:text-white" href="{{ route('admin.games.index') }}">{{ __('admin.navigation.games') }}</a>
-                            <a class="transition hover:text-white" href="{{ route('admin.rarities.index') }}">{{ __('admin.navigation.rarities') }}</a>
-                            <a class="transition hover:text-white" href="{{ route('admin.products.index') }}">{{ __('admin.navigation.products') }}</a>
-                            <a class="transition hover:text-white" href="{{ route('admin.orders.index') }}">{{ __('admin.navigation.orders') }}</a>
+                            @if ($hasConfirmedMfa)
+                                <a class="transition hover:text-white" href="{{ route('admin.dashboard') }}">{{ __('admin.navigation.dashboard') }}</a>
+                                <a class="transition hover:text-white" href="{{ route('admin.games.index') }}">{{ __('admin.navigation.games') }}</a>
+                                <a class="transition hover:text-white" href="{{ route('admin.rarities.index') }}">{{ __('admin.navigation.rarities') }}</a>
+                                <a class="transition hover:text-white" href="{{ route('admin.products.index') }}">{{ __('admin.navigation.products') }}</a>
+                                <a class="transition hover:text-white" href="{{ route('admin.orders.index') }}">{{ __('admin.navigation.orders') }}</a>
+                            @else
+                                <a class="transition hover:text-white" href="{{ route('admin.security') }}">{{ __('admin.navigation.security') }}</a>
+                            @endif
+
+                            @if ($adminUser?->email !== null)
+                                <span class="max-w-64 truncate text-zinc-500" title="{{ $adminUser->email }}">{{ $adminUser->email }}</span>
+                            @endif
 
                             <form method="POST" action="{{ route('admin.logout') }}">
                                 @csrf

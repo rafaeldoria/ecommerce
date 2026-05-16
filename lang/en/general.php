@@ -9,6 +9,7 @@ return [
             'auth' => [
                 'logged_in' => 'Admin authenticated successfully.',
                 'logged_out' => 'Admin logged out successfully.',
+                'mfa_required' => 'MFA challenge is required.',
                 'profile_retrieved' => 'Admin profile retrieved successfully.',
             ],
             'games' => [
@@ -61,6 +62,8 @@ return [
         'game_in_use' => 'The selected game cannot be deleted because products still reference it.',
         'rarity_in_use' => 'The selected rarity cannot be deleted because products still reference it.',
         'invalid_admin_credentials' => 'Admin credentials are invalid.',
+        'mfa_setup_required' => 'MFA setup is required before this admin account can authenticate through the API.',
+        'mfa_challenge_expired' => 'The MFA challenge expired or no longer exists.',
         'invalid_cart_quantity' => 'Cart quantity must be greater than zero.',
         'invalid_product_reference' => 'The selected product does not exist.',
         'invalid_game_reference' => 'The selected game does not exist.',

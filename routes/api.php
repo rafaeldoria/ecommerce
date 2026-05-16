@@ -35,8 +35,11 @@ Route::prefix('admin')->group(function (): void {
     Route::post('/auth/login', [AdminAuthController::class, 'login'])
         ->middleware('throttle:admin-login')
         ->name('api.admin.auth.login');
+    Route::post('/auth/mfa-challenge', [AdminAuthController::class, 'mfaChallenge'])
+        ->middleware('throttle:admin-login')
+        ->name('api.admin.auth.mfa-challenge');
 
-    Route::middleware(['auth:sanctum', 'admin'])->group(function (): void {
+    Route::middleware(['auth:sanctum', 'admin', 'admin.api.mfa'])->group(function (): void {
         Route::post('/auth/logout', [AdminAuthController::class, 'logout'])
             ->name('api.admin.auth.logout');
         Route::get('/me', [AdminAuthController::class, 'me'])

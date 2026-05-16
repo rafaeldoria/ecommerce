@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Webhooks\MercadoPagoWebhookController;
+use App\Livewire\Admin\ChangePassword as AdminChangePassword;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
 use App\Livewire\Admin\Games as AdminGames;
 use App\Livewire\Admin\Games\Edit as AdminGamesEdit;
@@ -11,6 +12,7 @@ use App\Livewire\Admin\Products as AdminProducts;
 use App\Livewire\Admin\Products\Edit as AdminProductsEdit;
 use App\Livewire\Admin\Rarities as AdminRarities;
 use App\Livewire\Admin\Rarities\Edit as AdminRaritiesEdit;
+use App\Livewire\Admin\Security as AdminSecurity;
 use App\Livewire\Storefront\About;
 use App\Livewire\Storefront\Cart;
 use App\Livewire\Storefront\Catalog;
@@ -58,23 +60,28 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
     Route::get('/login', AdminLogin::class)->name('login');
 
     Route::middleware(['auth', 'admin'])->group(function (): void {
-        Route::get('/', AdminDashboard::class)->name('dashboard');
-        Route::get('/games', AdminGames::class)->name('games.index');
-        Route::get('/games/{game}/edit', AdminGamesEdit::class)
-            ->whereNumber('game')
-            ->name('games.edit');
-        Route::get('/rarities', AdminRarities::class)->name('rarities.index');
-        Route::get('/rarities/{rarity}/edit', AdminRaritiesEdit::class)
-            ->whereNumber('rarity')
-            ->name('rarities.edit');
-        Route::get('/products', AdminProducts::class)->name('products.index');
-        Route::get('/products/{product}/edit', AdminProductsEdit::class)
-            ->whereNumber('product')
-            ->name('products.edit');
-        Route::get('/orders', AdminOrdersIndex::class)->name('orders.index');
-        Route::get('/orders/{order}', AdminOrdersShow::class)
-            ->whereNumber('order')
-            ->name('orders.show');
+        Route::get('/security', AdminSecurity::class)->name('security');
+
+        Route::middleware('admin.mfa')->group(function (): void {
+            Route::get('/', AdminDashboard::class)->name('dashboard');
+            Route::get('/change-password', AdminChangePassword::class)->name('password.edit');
+            Route::get('/games', AdminGames::class)->name('games.index');
+            Route::get('/games/{game}/edit', AdminGamesEdit::class)
+                ->whereNumber('game')
+                ->name('games.edit');
+            Route::get('/rarities', AdminRarities::class)->name('rarities.index');
+            Route::get('/rarities/{rarity}/edit', AdminRaritiesEdit::class)
+                ->whereNumber('rarity')
+                ->name('rarities.edit');
+            Route::get('/products', AdminProducts::class)->name('products.index');
+            Route::get('/products/{product}/edit', AdminProductsEdit::class)
+                ->whereNumber('product')
+                ->name('products.edit');
+            Route::get('/orders', AdminOrdersIndex::class)->name('orders.index');
+            Route::get('/orders/{order}', AdminOrdersShow::class)
+                ->whereNumber('order')
+                ->name('orders.show');
+        });
 
         Route::post('/logout', function (Request $request): RedirectResponse {
             Auth::guard('web')->logout();

@@ -13,12 +13,13 @@ Use this checklist before deploying the ecommerce app with real buyer or payment
 - `TRUSTED_PROXIES` must list only the ingress/load balancer proxy addresses. Do not use `*` in production.
 - `SANCTUM_EXPIRATION` must be finite.
 - `SANCTUM_TOKEN_PREFIX` must be set for secret scanning.
+- `ADMIN_MFA_REQUIRED=true` must be enabled for production admin access.
 - `MERCADO_PAGO_WEBHOOK_SIGNATURE_TOLERANCE_SECONDS` should stay non-zero, normally `300`.
 - `MERCADO_PAGO_CHECKOUT_ALLOWED_HOSTS` should contain only expected Mercado Pago checkout hosts.
 
 ## Admin Access
 
-- Enable MFA before processing real buyer/payment data. The preferred local implementation path is TOTP with encrypted per-admin secrets and recovery codes.
+- Enable MFA before processing real buyer/payment data. The implemented path is TOTP with encrypted per-admin secrets and recovery codes.
 - Keep admin accounts limited to staff who need catalog, stock, order, and payment-verification access.
 - Use strong unique passwords and rotate/revoke admin API tokens after staff changes or suspected exposure.
 

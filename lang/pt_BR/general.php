@@ -9,6 +9,7 @@ return [
             'auth' => [
                 'logged_in' => 'Admin autenticado com sucesso.',
                 'logged_out' => 'Admin desconectado com sucesso.',
+                'mfa_required' => 'O desafio de MFA e obrigatorio.',
                 'profile_retrieved' => 'Perfil do admin recuperado com sucesso.',
             ],
             'games' => [
@@ -61,6 +62,8 @@ return [
         'game_in_use' => 'O jogo selecionado nao pode ser removido porque ainda existem produtos vinculados a ele.',
         'rarity_in_use' => 'A raridade selecionada nao pode ser removida porque ainda existem produtos vinculados a ela.',
         'invalid_admin_credentials' => 'As credenciais de admin sao invalidas.',
+        'mfa_setup_required' => 'A configuracao de MFA e obrigatoria antes que esta conta admin possa autenticar pela API.',
+        'mfa_challenge_expired' => 'O desafio de MFA expirou ou nao existe mais.',
         'invalid_cart_quantity' => 'A quantidade do carrinho deve ser maior que zero.',
         'invalid_product_reference' => 'O produto selecionado nao existe.',
         'invalid_game_reference' => 'O jogo selecionado nao existe.',
