@@ -1,7 +1,15 @@
 <section class="space-y-8">
     <div class="rounded-[2rem] border border-zinc-800 bg-zinc-900/70 p-8">
-        <h1 class="text-3xl font-semibold text-white">{{ __('admin.dashboard.title') }}</h1>
-        <p class="mt-3 max-w-3xl text-base leading-7 text-zinc-300">{{ __('admin.dashboard.summary') }}</p>
+        <div class="flex flex-wrap items-start justify-between gap-5">
+            <div>
+                <h1 class="text-3xl font-semibold text-white">{{ __('admin.dashboard.title') }}</h1>
+                <p class="mt-3 max-w-3xl text-base leading-7 text-zinc-300">{{ __('admin.dashboard.summary') }}</p>
+            </div>
+
+            <a class="inline-flex items-center rounded-2xl border border-zinc-700 px-5 py-3 text-sm font-semibold text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-950" href="{{ route('admin.password.edit') }}">
+                {{ __('admin.dashboard.change_password') }}
+            </a>
+        </div>
     </div>
 
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

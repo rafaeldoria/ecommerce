@@ -82,6 +82,26 @@ return [
     'dashboard' => [
         'title' => 'Admin dashboard',
         'summary' => 'This admin surface is intentionally simpler than the storefront, but it now exposes the operational data needed to run catalog and order follow-up.',
+        'change_password' => 'Change password',
+    ],
+    'password' => [
+        'title' => 'Change password',
+        'eyebrow' => 'Account credential',
+        'summary' => 'Confirm your current password and authenticator code before setting a new admin password.',
+        'current_password_label' => 'Old password',
+        'new_password_label' => 'New password',
+        'new_password_confirmation_label' => 'Confirm password',
+        'new_password_help' => 'Use at least 6 characters, including 1 number and 1 special character.',
+        'mfa_code_label' => 'Auth code',
+        'mfa_code_help' => 'Use the current code from your authenticator app. Recovery codes are not accepted here.',
+        'submit' => 'Confirm',
+        'cancel' => 'Back to dashboard',
+        'messages' => [
+            'changed' => 'Password changed.',
+        ],
+        'errors' => [
+            'invalid_current_password' => 'The old password is invalid.',
+        ],
     ],
     'games' => [
         'title' => 'Games',

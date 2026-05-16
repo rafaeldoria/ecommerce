@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Webhooks\MercadoPagoWebhookController;
+use App\Livewire\Admin\ChangePassword as AdminChangePassword;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
 use App\Livewire\Admin\Games as AdminGames;
 use App\Livewire\Admin\Games\Edit as AdminGamesEdit;
@@ -63,6 +64,7 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
 
         Route::middleware('admin.mfa')->group(function (): void {
             Route::get('/', AdminDashboard::class)->name('dashboard');
+            Route::get('/change-password', AdminChangePassword::class)->name('password.edit');
             Route::get('/games', AdminGames::class)->name('games.index');
             Route::get('/games/{game}/edit', AdminGamesEdit::class)
                 ->whereNumber('game')

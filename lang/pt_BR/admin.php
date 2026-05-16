@@ -82,6 +82,26 @@ return [
     'dashboard' => [
         'title' => 'Dashboard admin',
         'summary' => 'Esta superficie admin e intencionalmente mais simples que a storefront, mas agora expoe os dados operacionais necessarios para catalogo e follow-up dos pedidos.',
+        'change_password' => 'Alterar senha',
+    ],
+    'password' => [
+        'title' => 'Alterar senha',
+        'eyebrow' => 'Credencial da conta',
+        'summary' => 'Confirme sua senha atual e o codigo autenticador antes de definir uma nova senha admin.',
+        'current_password_label' => 'Senha antiga',
+        'new_password_label' => 'Nova senha',
+        'new_password_confirmation_label' => 'Confirmar senha',
+        'new_password_help' => 'Use pelo menos 6 caracteres, incluindo 1 numero e 1 caractere especial.',
+        'mfa_code_label' => 'Codigo auth',
+        'mfa_code_help' => 'Use o codigo atual do app autenticador. Codigos de recuperacao nao sao aceitos aqui.',
+        'submit' => 'Confirmar',
+        'cancel' => 'Voltar ao dashboard',
+        'messages' => [
+            'changed' => 'Senha alterada.',
+        ],
+        'errors' => [
+            'invalid_current_password' => 'A senha antiga e invalida.',
+        ],
     ],
     'games' => [
         'title' => 'Jogos',
