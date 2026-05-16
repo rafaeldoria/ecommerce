@@ -7,11 +7,11 @@ use App\Modules\Payments\Exceptions\PaymentConfigurationMissing;
 use App\Modules\Payments\MercadoPago\MercadoPagoCheckoutPreferenceGateway;
 use App\Modules\Payments\MercadoPago\MercadoPagoPaymentDetailsGateway;
 use App\Modules\Payments\MercadoPago\MercadoPagoPreferenceClient;
+use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Http;
 use MercadoPago\MercadoPagoConfig;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
-use Illuminate\Http\Client\Request;
-use Illuminate\Support\Facades\Http;
 
 class MercadoPagoCheckoutEnvironmentTest extends TestCase
 {

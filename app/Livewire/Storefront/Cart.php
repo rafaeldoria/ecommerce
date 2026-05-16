@@ -32,8 +32,7 @@ class Cart extends Component
     public function render(
         GetCurrentCartAction $getCurrentCartAction,
         ListCartProductsQuery $listCartProductsQuery,
-    )
-    {
+    ) {
         $items = $this->presentedItems(
             $getCurrentCartAction->execute(),
             $listCartProductsQuery,
