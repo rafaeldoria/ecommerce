@@ -56,5 +56,5 @@ jobs:
           php artisan view:clear
           php artisan optimize
 
-          chmod -R ug+rwX storage bootstrap/cache
+          chmod -R ug+rwX bootstrap/cache storage/framework storage/logs
           EOF
