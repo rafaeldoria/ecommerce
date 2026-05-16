@@ -1,0 +1,60 @@
+name: Deploy Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.PRODUCTION_SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.PRODUCTION_HOST }}
+          SSH_PORT: ${{ secrets.PRODUCTION_PORT || '22' }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/production_deploy_key
+          chmod 600 ~/.ssh/production_deploy_key
+          ssh-keyscan -p "$SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts
+
+      - name: Deploy over SSH
+        env:
+          SSH_HOST: ${{ secrets.PRODUCTION_HOST }}
+          SSH_USER: ${{ secrets.PRODUCTION_USER }}
+          SSH_PORT: ${{ secrets.PRODUCTION_PORT || '22' }}
+          APP_PATH: ${{ secrets.PRODUCTION_APP_PATH || '/var/www/ecommerce' }}
+        run: |
+          ssh -i ~/.ssh/production_deploy_key -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "APP_PATH='$APP_PATH' bash -se" <<'EOF'
+          set -euo pipefail
+
+          cd "$APP_PATH"
+
+          git fetch origin main
+          git checkout main
+          git pull --ff-only origin main
+
+          composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+
+          npm ci
+          npm run build
+
+          php artisan migrate --force
+
+          php artisan config:clear
+          php artisan route:clear
+          php artisan view:clear
+          php artisan optimize
+
+          chmod -R ug+rwX storage bootstrap/cache
+          EOF
