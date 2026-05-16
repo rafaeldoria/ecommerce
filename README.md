@@ -97,6 +97,7 @@ Adjust these values in `.env` to match your local Docker or PostgreSQL setup bef
 
 ## Testing and validation baseline
 
+- Pull requests to `main` run the GitHub Actions CI workflow before merge.
 - Every significant feature should cover at least one happy path
 - Every significant feature should cover at least one failure or business-rule path
 - Prefer behavior-focused tests over implementation-detail assertions
