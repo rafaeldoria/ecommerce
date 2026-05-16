@@ -30,7 +30,9 @@ class AdminChangePasswordTest extends TestCase
     #[Test]
     public function dashboard_links_to_change_password_page(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = User::factory()->admin()->create([
+            'email' => 'admin@example.com',
+        ]);
 
         $this->enableMfa($admin);
 
@@ -38,7 +40,8 @@ class AdminChangePasswordTest extends TestCase
             ->get(route('admin.dashboard'))
             ->assertOk()
             ->assertSee(__('admin.dashboard.change_password'))
-            ->assertSee(route('admin.password.edit'), false);
+            ->assertSee(route('admin.password.edit'), false)
+            ->assertSee('admin@example.com');
     }
 
     #[Test]
@@ -80,8 +83,8 @@ class AdminChangePasswordTest extends TestCase
         Livewire::actingAs($admin->refresh())
             ->test(ChangePassword::class)
             ->set('currentPassword', 'wrong-pass')
-            ->set('newPassword', 'new-pass1!')
-            ->set('newPasswordConfirmation', 'new-pass1!')
+            ->set('newPassword', 'New-pass1!')
+            ->set('newPasswordConfirmation', 'New-pass1!')
             ->set('mfaCode', $this->currentTotpCode($admin->refresh()))
             ->call('changePassword')
             ->assertHasErrors(['currentPassword']);
@@ -111,8 +114,17 @@ class AdminChangePasswordTest extends TestCase
         Livewire::actingAs($admin->refresh())
             ->test(ChangePassword::class)
             ->set('currentPassword', 'old-pass1!')
-            ->set('newPassword', 'abcdef1')
-            ->set('newPasswordConfirmation', 'abcdef1')
+            ->set('newPassword', 'abcdef1!')
+            ->set('newPasswordConfirmation', 'abcdef1!')
+            ->set('mfaCode', $this->currentTotpCode($admin->refresh()))
+            ->call('changePassword')
+            ->assertHasErrors(['newPassword']);
+
+        Livewire::actingAs($admin->refresh())
+            ->test(ChangePassword::class)
+            ->set('currentPassword', 'old-pass1!')
+            ->set('newPassword', 'Abcdef1')
+            ->set('newPasswordConfirmation', 'Abcdef1')
             ->set('mfaCode', $this->currentTotpCode($admin->refresh()))
             ->call('changePassword')
             ->assertHasErrors(['newPassword']);
@@ -130,8 +142,8 @@ class AdminChangePasswordTest extends TestCase
         Livewire::actingAs($admin->refresh())
             ->test(ChangePassword::class)
             ->set('currentPassword', 'old-pass1!')
-            ->set('newPassword', 'new-pass1!')
-            ->set('newPasswordConfirmation', 'different1!')
+            ->set('newPassword', 'New-pass1!')
+            ->set('newPasswordConfirmation', 'Different1!')
             ->set('mfaCode', $this->currentTotpCode($admin->refresh()))
             ->call('changePassword')
             ->assertHasErrors(['newPasswordConfirmation']);
@@ -149,8 +161,8 @@ class AdminChangePasswordTest extends TestCase
         Livewire::actingAs($admin->refresh())
             ->test(ChangePassword::class)
             ->set('currentPassword', 'old-pass1!')
-            ->set('newPassword', 'new-pass1!')
-            ->set('newPasswordConfirmation', 'new-pass1!')
+            ->set('newPassword', 'New-pass1!')
+            ->set('newPasswordConfirmation', 'New-pass1!')
             ->set('mfaCode', '000000')
             ->call('changePassword')
             ->assertHasErrors(['code']);
@@ -172,8 +184,8 @@ class AdminChangePasswordTest extends TestCase
         Livewire::actingAs($admin->refresh())
             ->test(ChangePassword::class)
             ->set('currentPassword', 'old-pass1!')
-            ->set('newPassword', 'new-pass1!')
-            ->set('newPasswordConfirmation', 'new-pass1!')
+            ->set('newPassword', 'New-pass1!')
+            ->set('newPasswordConfirmation', 'New-pass1!')
             ->set('mfaCode', $this->currentTotpCode($admin->refresh()))
             ->call('changePassword')
             ->assertHasNoErrors()
@@ -183,13 +195,13 @@ class AdminChangePasswordTest extends TestCase
             ->assertSet('mfaCode', '')
             ->assertSee(__('admin.password.messages.changed'));
 
-        $this->assertTrue(Hash::check('new-pass1!', $admin->refresh()->password));
+        $this->assertTrue(Hash::check('New-pass1!', $admin->refresh()->password));
 
         auth()->logout();
 
         Livewire::test(Login::class)
             ->set('login', 'ops-admin')
-            ->set('password', 'new-pass1!')
+            ->set('password', 'New-pass1!')
             ->call('authenticate')
             ->assertSet('showMfaChallenge', true);
     }
@@ -206,8 +218,8 @@ class AdminChangePasswordTest extends TestCase
         Livewire::actingAs($admin->refresh())
             ->test(ChangePassword::class)
             ->set('currentPassword', 'old-pass1!')
-            ->set('newPassword', 'new-pass1!')
-            ->set('newPasswordConfirmation', 'new-pass1!')
+            ->set('newPassword', 'New-pass1!')
+            ->set('newPasswordConfirmation', 'New-pass1!')
             ->set('mfaCode', $recoveryCode)
             ->call('changePassword')
             ->assertHasErrors(['code']);

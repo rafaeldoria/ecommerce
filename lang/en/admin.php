@@ -91,7 +91,7 @@ return [
         'current_password_label' => 'Old password',
         'new_password_label' => 'New password',
         'new_password_confirmation_label' => 'Confirm password',
-        'new_password_help' => 'Use at least 6 characters, including 1 number and 1 special character.',
+        'new_password_help' => 'Use at least 6 characters, including 1 uppercase letter, 1 number, and 1 special character.',
         'mfa_code_label' => 'Auth code',
         'mfa_code_help' => 'Use the current code from your authenticator app. Recovery codes are not accepted here.',
         'submit' => 'Confirm',

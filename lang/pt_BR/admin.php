@@ -91,7 +91,7 @@ return [
         'current_password_label' => 'Senha antiga',
         'new_password_label' => 'Nova senha',
         'new_password_confirmation_label' => 'Confirmar senha',
-        'new_password_help' => 'Use pelo menos 6 caracteres, incluindo 1 numero e 1 caractere especial.',
+        'new_password_help' => 'Use pelo menos 6 caracteres, incluindo 1 letra maiuscula, 1 numero e 1 caractere especial.',
         'mfa_code_label' => 'Codigo auth',
         'mfa_code_help' => 'Use o codigo atual do app autenticador. Codigos de recuperacao nao sao aceitos aqui.',
         'submit' => 'Confirmar',

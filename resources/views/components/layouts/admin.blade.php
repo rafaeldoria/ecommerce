@@ -35,6 +35,10 @@
                                 <a class="transition hover:text-white" href="{{ route('admin.security') }}">{{ __('admin.navigation.security') }}</a>
                             @endif
 
+                            @if ($adminUser?->email !== null)
+                                <span class="max-w-64 truncate text-zinc-500" title="{{ $adminUser->email }}">{{ $adminUser->email }}</span>
+                            @endif
+
                             <form method="POST" action="{{ route('admin.logout') }}">
                                 @csrf
                                 <button class="rounded-full border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-900" type="submit">
